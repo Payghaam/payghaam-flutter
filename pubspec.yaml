@@ -1,0 +1,28 @@
+name: engagekaro_flutter
+description: EngageKaro Flutter SDK — identify users, manage subscriptions, set tags, and track events with the EngageKaro engagement platform.
+version: 0.1.0
+homepage: https://github.com/your-org/engagekaro
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  shared_preferences: ^2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  plugin:
+    platforms:
+      # iOS ships native APNs code (no Firebase). Android push is provided by the
+      # host app via firebase_messaging + FcmPushProvider, so no Android native.
+      ios:
+        pluginClass: EngagekaroFlutterPlugin
