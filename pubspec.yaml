@@ -22,7 +22,11 @@ dev_dependencies:
 flutter:
   plugin:
     platforms:
-      # iOS ships native APNs code (no Firebase). Android push is provided by the
-      # host app via firebase_messaging + FcmPushProvider, so no Android native.
+      # iOS ships native APNs (no Firebase). Android ships native FCM (depends on
+      # the firebase-messaging Android library directly — the host app does NOT
+      # need the firebase_messaging Flutter plugin). One package, no platform branch.
       ios:
+        pluginClass: EngagekaroFlutterPlugin
+      android:
+        package: com.engagekaro.engagekaro_flutter
         pluginClass: EngagekaroFlutterPlugin

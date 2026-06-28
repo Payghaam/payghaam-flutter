@@ -32,69 +32,47 @@ await EngageKaro.instance.trackEvent('purchase', {'sku': 'sku_123'});
 
 ## Enabling push
 
-Push uses the platform's native transport, matching how the platform sends:
-**iOS → APNs directly** (no Firebase), **Android → FCM**.
+Push is native on **both** platforms from this one plugin — **iOS → APNs**
+(no Firebase), **Android → FCM** (the plugin depends on the `firebase-messaging`
+Android library directly). There's **no platform branch** and no `firebase_messaging`
+in your app's pubspec.
 
-- **iOS**: use the built-in `ApnsPushProvider` — see [IOS_SETUP.md](./IOS_SETUP.md)
-  for the Xcode steps (capabilities, App Group, Notification Service Extension).
-- **Android**: implement `PushProvider` with `firebase_messaging` (below).
-
-Pick the provider per platform:
+`EngageKaroPushProvider` is the default, so simply:
 
 ```dart
-import 'dart:io' show Platform;
-final push = Platform.isIOS ? ApnsPushProvider() : FcmPushProvider();
-await EngageKaro.instance.initialize(config, push: push);
-```
-
-### Android provider (firebase_messaging)
-
-Implement `PushProvider` with `firebase_messaging` and pass it to `initialize`:
-
-```dart
-import 'dart:async';
-import 'dart:io' show Platform;
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:engagekaro_flutter/engagekaro_flutter.dart';
-
-class FcmPushProvider implements PushProvider {
-  final _fm = FirebaseMessaging.instance;
-
-  @override
-  SubscriptionType get subscriptionType =>
-      Platform.isIOS ? SubscriptionType.iosPush : SubscriptionType.androidPush;
-
-  @override
-  Future<bool> requestPermission() async {
-    final s = await _fm.requestPermission();
-    return s.authorizationStatus == AuthorizationStatus.authorized;
-  }
-
-  @override
-  Future<String?> getToken() => _fm.getToken();
-
-  @override
-  Stream<String> get onTokenRefresh => _fm.onTokenRefresh;
-
-  @override
-  Stream<Map<String, dynamic>> get onNotificationOpened =>
-      FirebaseMessaging.onMessageOpenedApp.map((m) => m.data);
-
-  @override
-  Stream<Map<String, dynamic>> get onForegroundMessage =>
-      FirebaseMessaging.onMessage.map((m) => m.data);
-
-  @override
-  Future<Map<String, dynamic>?> getInitialNotification() async {
-    final m = await _fm.getInitialMessage();
-    return m?.data;
-  }
-}
-
-// wire it up:
-await EngageKaro.instance.initialize(config, push: FcmPushProvider());
+final push = EngageKaroPushProvider();
+await EngageKaro.instance.initialize(config, push: push); // or omit push — it's the default
+await EngageKaro.instance.login('user-id');
 await EngageKaro.instance.requestPushPermission();
+
+// Enable terminated-state `delivered` receipts (iOS NSE + Android FCM service):
+await push.shareConfig(
+  appGroup: 'group.com.yourcompany.app.engagekaro', // iOS only; Android ignores it
+  apiBase: config.baseUrl,
+  apiKey: config.apiKey,
+  externalId: 'user-id',
+);
 ```
+
+Platform setup:
+
+- **iOS** — [IOS_SETUP.md](./IOS_SETUP.md): capabilities, App Group, Notification
+  Service Extension.
+- **Android** — [ANDROID_SETUP.md](./ANDROID_SETUP.md): add a Firebase project +
+  `google-services.json` (no `firebase_messaging` plugin needed).
+
+## Identity Verification
+
+If a project enables Identity Verification (dashboard → project → Security),
+SDK calls referencing an external id must include an HMAC-SHA256 of that id,
+computed **on your server** with the project secret:
+
+```dart
+// hash = HMAC_SHA256(externalId, projectSecret) — computed by YOUR backend
+await EngageKaro.instance.login('user-id', identityHash: hash);
+```
+
+Never ship the secret in the app.
 
 ## What maps to the backend
 

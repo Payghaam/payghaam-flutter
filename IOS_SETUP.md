@@ -23,10 +23,9 @@ Add this key to the **app target's** `Info.plist` (and the NSE's later):
 <string>group.com.yourcompany.app.engagekaro</string>
 ```
 
-## 3. Use the iOS provider in Dart
+## 3. Use the provider in Dart (same code on iOS and Android)
 
 ```dart
-import 'dart:io' show Platform;
 import 'package:engagekaro_flutter/engagekaro_flutter.dart';
 
 final config = EngageKaroConfig(
@@ -35,22 +34,19 @@ final config = EngageKaroConfig(
   baseUrl: 'https://api.yourhost.com',
 );
 
-final apns = ApnsPushProvider();
-await EngageKaro.instance.initialize(config, push: apns);
+final push = EngageKaroPushProvider();
+await EngageKaro.instance.initialize(config, push: push);
 await EngageKaro.instance.login('your-user-id');
 await EngageKaro.instance.requestPushPermission();
 
 // Share config with the NSE so it can report delivery while terminated.
-await apns.shareConfigForExtension(
-  appGroup: 'group.com.yourcompany.app.engagekaro',
+await push.shareConfig(
+  appGroup: 'group.com.yourcompany.app.engagekaro', // iOS only; Android ignores it
   apiBase: config.baseUrl,
   apiKey: config.apiKey,
   externalId: 'your-user-id',
 );
 ```
-
-> On Android, swap `ApnsPushProvider()` for your `FcmPushProvider` (see README)
-> guarded by `Platform.isIOS`.
 
 ## 4. Add the Notification Service Extension
 

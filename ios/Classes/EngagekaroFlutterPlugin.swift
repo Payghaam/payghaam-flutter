@@ -112,6 +112,7 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
     defaults?.set(args["apiBase"] as? String, forKey: "engagekaro.apiBase")
     defaults?.set(args["apiKey"] as? String, forKey: "engagekaro.apiKey")
     defaults?.set(args["externalId"] as? String, forKey: "engagekaro.externalId")
+    defaults?.set(args["identityHash"] as? String, forKey: "engagekaro.identityHash")
   }
 
   /// Convert APNs userInfo into a Flutter-codec-safe `[String: Any]`.

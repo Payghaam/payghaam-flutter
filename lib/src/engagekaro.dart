@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'api_client.dart';
 import 'config.dart';
+import 'native_push_provider.dart';
 import 'notifications.dart';
 import 'storage.dart';
 import 'user_manager.dart';
@@ -24,7 +25,10 @@ class EngageKaro {
   late ApiClient _api;
   late UserManager _user;
   final Storage _storage = Storage();
-  PushProvider _push = NoopPushProvider();
+  // Defaults to native push (iOS APNs / Android FCM). Pass a different
+  // PushProvider to initialize() to override (e.g. NoopPushProvider for
+  // comms-only usage with no push).
+  PushProvider _push = EngageKaroPushProvider();
 
   bool _initialized = false;
   bool _consentGiven = false;
@@ -57,13 +61,20 @@ class EngageKaro {
   }
 
   void _wirePushListeners() {
-    _subs.add(_push.onTokenRefresh.listen((token) => _registerPushToken(token)));
-    _subs.add(
-      _push.onNotificationOpened.listen((data) => _reportReceiptFromData(data, 'opened')),
-    );
-    _subs.add(
-      _push.onForegroundMessage.listen((data) => _reportReceiptFromData(data, 'delivered')),
-    );
+    // onError guards keep the SDK usable on platforms without the native plugin
+    // (e.g. web/desktop/tests) where the event channels aren't available.
+    _subs.add(_push.onTokenRefresh.listen(
+      (token) => _registerPushToken(token),
+      onError: (_) {},
+    ));
+    _subs.add(_push.onNotificationOpened.listen(
+      (data) => _reportReceiptFromData(data, 'opened'),
+      onError: (_) {},
+    ));
+    _subs.add(_push.onForegroundMessage.listen(
+      (data) => _reportReceiptFromData(data, 'delivered'),
+      onError: (_) {},
+    ));
   }
 
   void _reportReceiptFromData(Map<String, dynamic> data, String event) {
@@ -89,8 +100,13 @@ class EngageKaro {
   }
 
   /// Identify the current user by your backend's user id (External ID).
-  Future<void> login(String externalId) async {
+  ///
+  /// If the project has Identity Verification enabled, pass [identityHash] =
+  /// HMAC-SHA256(externalId) computed **on your server** with the project secret
+  /// (never ship the secret in the app).
+  Future<void> login(String externalId, {String? identityHash}) async {
     _externalId = externalId;
+    _api.identityHash = identityHash;
     await _storage.setExternalId(externalId);
     if (!_canSend) return;
     await _api.identify(externalId: externalId);
@@ -102,6 +118,7 @@ class EngageKaro {
   /// Clear the current user identity on this device.
   Future<void> logout() async {
     _externalId = null;
+    _api.identityHash = null;
     await _storage.setExternalId(null);
   }
 

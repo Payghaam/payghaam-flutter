@@ -1,0 +1,180 @@
+package com.engagekaro.engagekaro_flutter
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import androidx.core.app.ActivityCompat
+import com.google.firebase.messaging.FirebaseMessaging
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.plugin.common.PluginRegistry
+
+/// Native Android plugin: FCM token, notification permission, foreground +
+/// tap events, cold-start, and shared config for delivered receipts. Mirrors the
+/// iOS plugin's method/event channels so one Dart provider serves both platforms.
+class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
+  PluginRegistry.NewIntentListener, PluginRegistry.RequestPermissionsResultListener {
+
+  private lateinit var context: Context
+  private lateinit var methods: MethodChannel
+  private var activity: Activity? = null
+  private var pendingPermission: Result? = null
+
+  override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+    context = binding.applicationContext
+    methods = MethodChannel(binding.binaryMessenger, "engagekaro/methods")
+    methods.setMethodCallHandler(this)
+    EventChannel(binding.binaryMessenger, "engagekaro/onToken").setStreamHandler(SinkHandler(Channel.TOKEN))
+    EventChannel(binding.binaryMessenger, "engagekaro/onOpened").setStreamHandler(SinkHandler(Channel.OPENED))
+    EventChannel(binding.binaryMessenger, "engagekaro/onForeground").setStreamHandler(SinkHandler(Channel.FOREGROUND))
+  }
+
+  override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+    methods.setMethodCallHandler(null)
+  }
+
+  override fun onMethodCall(call: MethodCall, result: Result) {
+    when (call.method) {
+      "requestPermission" -> requestPermission(result)
+      "registerForRemoteNotifications" -> result.success(null)
+      "getToken" -> FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+        result.success(if (task.isSuccessful) task.result else null)
+      }
+      "getInitialNotification" -> {
+        result.success(initialNotification)
+        initialNotification = null
+      }
+      "setSharedConfig" -> {
+        @Suppress("UNCHECKED_CAST")
+        val args = call.arguments as? Map<String, Any?>
+        if (args != null) saveSharedConfig(context, args)
+        result.success(null)
+      }
+      else -> result.notImplemented()
+    }
+  }
+
+  private fun requestPermission(result: Result) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      val act = activity ?: run { result.success(false); return }
+      if (act.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+        == PackageManager.PERMISSION_GRANTED) {
+        result.success(true)
+        return
+      }
+      pendingPermission = result
+      ActivityCompat.requestPermissions(
+        act, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), PERMISSION_REQUEST_CODE
+      )
+    } else {
+      result.success(true) // permission implicit pre-Android 13
+    }
+  }
+
+  override fun onRequestPermissionsResult(
+    requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+  ): Boolean {
+    if (requestCode != PERMISSION_REQUEST_CODE) return false
+    val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+    pendingPermission?.success(granted)
+    pendingPermission = null
+    return true
+  }
+
+  // MARK: ActivityAware (read launch/new intents for taps)
+
+  override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+    activity = binding.activity
+    binding.addOnNewIntentListener(this)
+    binding.addRequestPermissionsResultListener(this)
+    handleIntent(binding.activity.intent)
+  }
+
+  override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+    activity = binding.activity
+    binding.addOnNewIntentListener(this)
+    binding.addRequestPermissionsResultListener(this)
+  }
+
+  override fun onDetachedFromActivityForConfigChanges() { activity = null }
+  override fun onDetachedFromActivity() { activity = null }
+
+  override fun onNewIntent(intent: Intent): Boolean {
+    handleIntent(intent)
+    return false
+  }
+
+  private fun handleIntent(intent: Intent?) {
+    if (intent == null || !intent.getBooleanExtra("ek_opened", false)) return
+    val data = HashMap<String, Any?>()
+    intent.extras?.keySet()?.forEach { k ->
+      if (k != "ek_opened") data[k] = intent.extras?.getString(k)
+    }
+    emitOpened(data)
+    intent.removeExtra("ek_opened")
+  }
+
+  internal enum class Channel { TOKEN, OPENED, FOREGROUND }
+
+  private class SinkHandler(val channel: Channel) : EventChannel.StreamHandler {
+    override fun onListen(arguments: Any?, events: EventChannel.EventSink?) = attachSink(channel, events)
+    override fun onCancel(arguments: Any?) = attachSink(channel, null)
+  }
+
+  companion object {
+    private const val PERMISSION_REQUEST_CODE = 8094
+    const val PREFS = "engagekaro"
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var tokenSink: EventChannel.EventSink? = null
+    private var openedSink: EventChannel.EventSink? = null
+    private var foregroundSink: EventChannel.EventSink? = null
+    private val tokenBuffer = ArrayList<Any>()
+    private val openedBuffer = ArrayList<Any>()
+    private val foregroundBuffer = ArrayList<Any>()
+
+    @JvmStatic
+    var initialNotification: Map<String, Any?>? = null
+
+    fun emitToken(token: String) = handler.post {
+      tokenSink?.success(token) ?: tokenBuffer.add(token)
+    }
+
+    fun emitForeground(data: Map<String, Any?>) = handler.post {
+      foregroundSink?.success(data) ?: foregroundBuffer.add(data)
+    }
+
+    fun emitOpened(data: Map<String, Any?>) = handler.post {
+      val s = openedSink
+      if (s != null) s.success(data) else initialNotification = data
+    }
+
+    private fun attachSink(channel: Channel, sink: EventChannel.EventSink?) {
+      when (channel) {
+        Channel.TOKEN -> { tokenSink = sink; if (sink != null) { tokenBuffer.forEach { sink.success(it) }; tokenBuffer.clear() } }
+        Channel.OPENED -> { openedSink = sink; if (sink != null) { openedBuffer.forEach { sink.success(it) }; openedBuffer.clear() } }
+        Channel.FOREGROUND -> { foregroundSink = sink; if (sink != null) { foregroundBuffer.forEach { sink.success(it) }; foregroundBuffer.clear() } }
+      }
+    }
+
+    fun saveSharedConfig(context: Context, args: Map<String, Any?>) {
+      context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply {
+        putString("apiBase", args["apiBase"] as? String)
+        putString("apiKey", args["apiKey"] as? String)
+        putString("externalId", args["externalId"] as? String)
+        putString("identityHash", args["identityHash"] as? String)
+        apply()
+      }
+    }
+  }
+}

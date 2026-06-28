@@ -61,6 +61,7 @@ class NotificationService: UNNotificationServiceExtension {
     else { return }
 
     let externalId = defaults.string(forKey: "engagekaro.externalId")
+    let identityHash = defaults.string(forKey: "engagekaro.identityHash")
     var body: [String: Any] = ["messageId": messageId, "event": "delivered"]
     if let ext = externalId { body["externalId"] = ext }
 
@@ -68,6 +69,7 @@ class NotificationService: UNNotificationServiceExtension {
     req.httpMethod = "POST"
     req.setValue("application/json", forHTTPHeaderField: "Content-Type")
     req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+    if let hash = identityHash { req.setValue(hash, forHTTPHeaderField: "X-EngageKaro-Identity-Hash") }
     req.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
     // NSE has a short lifetime; block briefly so the request goes out.

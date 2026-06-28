@@ -9,12 +9,17 @@ class ApiClient {
   final EngageKaroConfig config;
   final http.Client _http;
 
+  /// HMAC-SHA256(externalId) for Identity Verification. Set via [EngageKaro.login]
+  /// when the project requires it; sent on every call as a header.
+  String? identityHash;
+
   ApiClient(this.config, {http.Client? client}) : _http = client ?? http.Client();
 
   Map<String, String> get _headers => {
         'content-type': 'application/json',
         'authorization': 'Bearer ${config.apiKey}',
         'x-api-key': config.apiKey,
+        if (identityHash != null) 'x-engagekaro-identity-hash': identityHash!,
       };
 
   Uri _uri(String path) => Uri.parse('${config.apiRoot}$path');
