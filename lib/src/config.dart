@@ -16,12 +16,20 @@ class EngageKaroConfig {
   /// Request timeout for API calls.
   final Duration timeout;
 
+  /// When true, errors are printed to the console (useful during integration).
+  final bool debug;
+
+  /// Optional hook for background failures (identify, push registration, etc.).
+  final void Function(Object error, String context)? onError;
+
   const EngageKaroConfig({
     required this.appId,
     required this.apiKey,
     required this.baseUrl,
     this.requireConsent = false,
     this.timeout = const Duration(seconds: 15),
+    this.debug = false,
+    this.onError,
   });
 
   /// Normalized base (no trailing slash).

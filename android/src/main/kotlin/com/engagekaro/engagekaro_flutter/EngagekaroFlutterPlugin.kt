@@ -54,6 +54,7 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         result.success(initialNotification)
         initialNotification = null
       }
+      "getDeviceContext" -> result.success(deviceContext())
       "setSharedConfig" -> {
         @Suppress("UNCHECKED_CAST")
         val args = call.arguments as? Map<String, Any?>
@@ -122,6 +123,30 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     }
     emitOpened(data)
     intent.removeExtra("ek_opened")
+  }
+
+  private fun deviceContext(): Map<String, String> {
+    val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      context.resources.configuration.locales[0]
+    } else {
+      @Suppress("DEPRECATION")
+      context.resources.configuration.locale
+    }
+    val appVersion = try {
+      context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
+    } catch (_: PackageManager.NameNotFoundException) {
+      ""
+    }
+    return mapOf(
+      "country" to locale.country,
+      "language" to locale.language,
+      "timezone" to java.util.TimeZone.getDefault().id,
+      "os" to "Android",
+      "osVersion" to Build.VERSION.RELEASE,
+      "appVersion" to appVersion,
+      "deviceModel" to Build.MODEL,
+      "sdkVersion" to "0.1.0",
+    )
   }
 
   internal enum class Channel { TOKEN, OPENED, FOREGROUND }

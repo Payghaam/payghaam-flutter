@@ -1,23 +1,17 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
+
 import 'api_client.dart';
 import 'config.dart';
+import 'device_context.dart';
 import 'native_push_provider.dart';
 import 'notifications.dart';
 import 'storage.dart';
 import 'user_manager.dart';
 
 /// Entry point for the EngageKaro Flutter SDK.
-///
-/// ```dart
-/// await EngageKaro.instance.initialize(EngageKaroConfig(
-///   appId: 'project_id', apiKey: 'ek_client_...', baseUrl: 'https://api.host',
-/// ));
-/// await EngageKaro.instance.login('app-user-id');
-/// await EngageKaro.instance.user.addTag('plan', 'pro');
-/// await EngageKaro.instance.trackEvent('purchase', {'sku': 'x'});
-/// ```
-class EngageKaro {
+class EngageKaro with WidgetsBindingObserver {
   EngageKaro._();
   static final EngageKaro instance = EngageKaro._();
 
@@ -34,12 +28,28 @@ class EngageKaro {
   bool _consentGiven = false;
   String? _externalId;
   String? _pendingPushToken; // captured before login completes
+  String? _pushPermission; // granted | denied | unknown
+  bool _sessionCountedThisLaunch = false;
+  final SessionTracker _sessions = SessionTracker();
   final List<StreamSubscription<dynamic>> _subs = [];
+  Future<void>? _profileSyncFuture;
+  Future<void>? _postLoginFuture;
 
   UserManager get user => _user;
 
+  /// True after [initialize] has completed its local setup (network pings may still be in flight).
+  bool get isInitialized => _initialized;
+
   /// Whether network calls are currently allowed (respects consent gating).
   bool get _canSend => _initialized && (!_config.requireConsent || _consentGiven);
+
+  void _reportError(Object error, String context) {
+    if (_config.debug) {
+      // ignore: avoid_print
+      print('[EngageKaro] $context: $error');
+    }
+    _config.onError?.call(error, context);
+  }
 
   /// Initialize the SDK. Optionally pass a [PushProvider] (e.g. a
   /// firebase_messaging-backed implementation) to enable push registration.
@@ -54,10 +64,59 @@ class EngageKaro {
     _initialized = true;
 
     _wirePushListeners();
+    WidgetsBinding.instance.addObserver(this);
 
-    // Report a cold-start open (app launched by tapping a notification).
-    final initial = await _push.getInitialNotification();
-    if (initial != null) _reportReceiptFromData(initial, 'opened');
+    try {
+      final initial = await _push.getInitialNotification();
+      if (initial != null) _reportReceiptFromData(initial, 'opened');
+    } catch (e) {
+      _reportError(e, 'getInitialNotification');
+    }
+
+    if (_externalId != null) {
+      unawaited(_syncDeviceProfile(sessionStart: true));
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_onForeground());
+    }
+  }
+
+  Future<void> _onForeground() async {
+    if (!_canSend || _externalId == null) return;
+    if (!_sessions.noteForegroundResume()) return;
+    unawaited(_syncDeviceProfile(sessionStart: true));
+  }
+
+  /// One identify per call site; concurrent callers share a single in-flight request.
+  Future<void> _syncDeviceProfile({bool sessionStart = false}) {
+    final existing = _profileSyncFuture;
+    if (existing != null) return existing;
+    _profileSyncFuture = _doSyncDeviceProfile(sessionStart: sessionStart).whenComplete(() {
+      _profileSyncFuture = null;
+    });
+    return _profileSyncFuture!;
+  }
+
+  Future<void> _doSyncDeviceProfile({bool sessionStart = false}) async {
+    if (!_canSend || _externalId == null) return;
+    try {
+      final countSession = sessionStart && !_sessionCountedThisLaunch;
+      if (countSession) _sessionCountedThisLaunch = true;
+      final ctx = await DeviceContext.collect(
+        sessionStart: countSession,
+        pushPermission: _pushPermission,
+      );
+      await _api.identify(
+        externalId: _externalId,
+        deviceContext: ctx.toJson(),
+      );
+    } catch (e) {
+      _reportError(e, 'syncDeviceProfile');
+    }
   }
 
   void _wirePushListeners() {
@@ -65,15 +124,15 @@ class EngageKaro {
     // (e.g. web/desktop/tests) where the event channels aren't available.
     _subs.add(_push.onTokenRefresh.listen(
       (token) => _registerPushToken(token),
-      onError: (_) {},
+      onError: (e) => _reportError(e, 'onTokenRefresh'),
     ));
     _subs.add(_push.onNotificationOpened.listen(
       (data) => _reportReceiptFromData(data, 'opened'),
-      onError: (_) {},
+      onError: (e) => _reportError(e, 'onNotificationOpened'),
     ));
     _subs.add(_push.onForegroundMessage.listen(
       (data) => _reportReceiptFromData(data, 'delivered'),
-      onError: (_) {},
+      onError: (e) => _reportError(e, 'onForegroundMessage'),
     ));
   }
 
@@ -91,12 +150,16 @@ class EngageKaro {
     Map<String, dynamic>? properties,
   }) async {
     if (!_canSend) return;
-    await _api.reportReceipt(
-      messageId: messageId,
-      event: event,
-      externalId: _externalId,
-      properties: properties,
-    );
+    try {
+      await _api.reportReceipt(
+        messageId: messageId,
+        event: event,
+        externalId: _externalId,
+        properties: properties,
+      );
+    } catch (e) {
+      _reportError(e, 'reportPushReceipt');
+    }
   }
 
   /// Identify the current user by your backend's user id (External ID).
@@ -109,10 +172,25 @@ class EngageKaro {
     _api.identityHash = identityHash;
     await _storage.setExternalId(externalId);
     if (!_canSend) return;
-    await _api.identify(externalId: externalId);
-    // Flush any push token captured before the user was identified.
+
+    // Network enrichment (push token + single identify with device context) runs in background.
+    unawaited(_runPostLoginTasks());
+  }
+
+  /// Best-effort push registration and one identify — never blocks [login].
+  Future<void> _runPostLoginTasks() {
+    final existing = _postLoginFuture;
+    if (existing != null) return existing;
+    _postLoginFuture = _doPostLoginTasks().whenComplete(() {
+      _postLoginFuture = null;
+    });
+    return _postLoginFuture!;
+  }
+
+  Future<void> _doPostLoginTasks() async {
     final token = _pendingPushToken ?? await _push.getToken();
     if (token != null) await _registerPushToken(token);
+    await _syncDeviceProfile(sessionStart: true);
   }
 
   /// Clear the current user identity on this device.
@@ -125,16 +203,26 @@ class EngageKaro {
   /// Track a custom event (drives journeys + analytics).
   Future<void> trackEvent(String name, [Map<String, dynamic>? properties]) async {
     if (!_canSend) return;
-    await _api.track(name: name, externalId: _externalId, properties: properties);
+    try {
+      await _api.track(name: name, externalId: _externalId, properties: properties);
+    } catch (e) {
+      _reportError(e, 'trackEvent');
+    }
   }
 
   /// Prompt for OS notification permission (delegates to the PushProvider) and
   /// register the resulting token if granted.
   Future<bool> requestPushPermission() async {
     final granted = await _push.requestPermission();
+    _pushPermission = granted ? 'granted' : 'denied';
     if (granted) {
-      final token = await _push.getToken();
-      if (token != null) await _registerPushToken(token);
+      unawaited(() async {
+        final token = await _push.getToken();
+        if (token != null) await _registerPushToken(token);
+        await _syncDeviceProfile();
+      }());
+    } else if (_canSend && _externalId != null) {
+      unawaited(_syncDeviceProfile());
     }
     return granted;
   }
@@ -151,12 +239,21 @@ class EngageKaro {
       _pendingPushToken = token; // register once the user logs in
       return;
     }
-    await _api.addSubscription(
-      externalId: _externalId!,
-      type: platform ?? _push.subscriptionType,
-      token: token,
-    );
-    _pendingPushToken = null;
+    try {
+      final ctx = await DeviceContext.collect(pushPermission: _pushPermission);
+      await _api.addSubscription(
+        externalId: _externalId!,
+        type: platform ?? _push.subscriptionType,
+        token: token,
+        deviceModel: ctx.deviceModel,
+        deviceOs: ctx.osVersion != null ? '${ctx.os ?? ''} ${ctx.osVersion}'.trim() : ctx.os,
+        appVersion: ctx.appVersion,
+        sdk: ctx.sdkVersion,
+      );
+      _pendingPushToken = null;
+    } catch (e) {
+      _reportError(e, 'registerPushToken');
+    }
   }
 
   // ── Consent gating ──────────────────────────────────────────────────────────
@@ -167,6 +264,8 @@ class EngageKaro {
       baseUrl: _config.baseUrl,
       requireConsent: required,
       timeout: _config.timeout,
+      debug: _config.debug,
+      onError: _config.onError,
     );
   }
 
@@ -182,6 +281,7 @@ class EngageKaro {
 
   /// Tear down listeners and the HTTP client.
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     for (final s in _subs) {
       s.cancel();
     }

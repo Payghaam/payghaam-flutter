@@ -55,6 +55,8 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
       let n = initialNotification
       initialNotification = nil
       result(n)
+    case "getDeviceContext":
+      result(Self.deviceContext())
     case "setSharedConfig":
       if let args = call.arguments as? [String: Any] { saveSharedConfig(args) }
       result(nil)
@@ -122,6 +124,22 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
       if let k = key as? String { out[k] = value }
     }
     return out
+  }
+
+  private static func deviceContext() -> [String: Any] {
+    let locale = Locale.current
+    let tz = TimeZone.current.identifier
+    let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    return [
+      "country": locale.regionCode ?? "",
+      "language": locale.languageCode ?? "",
+      "timezone": tz,
+      "os": "iOS",
+      "osVersion": UIDevice.current.systemVersion,
+      "appVersion": appVersion ?? "",
+      "deviceModel": UIDevice.current.model,
+      "sdkVersion": "0.1.0",
+    ]
   }
 }
 

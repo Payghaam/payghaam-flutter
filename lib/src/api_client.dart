@@ -52,17 +52,13 @@ class ApiClient {
     String? externalId,
     Map<String, dynamic>? tags,
     List<Map<String, dynamic>>? subscriptions,
-    String? country,
-    String? language,
-    String? timezone,
+    Map<String, dynamic>? deviceContext,
   }) {
     return _post('/users', {
       if (externalId != null) 'externalId': externalId,
       if (tags != null) 'tags': tags,
       if (subscriptions != null) 'subscriptions': subscriptions,
-      if (country != null) 'country': country,
-      if (language != null) 'language': language,
-      if (timezone != null) 'timezone': timezone,
+      if (deviceContext != null) ...deviceContext,
     });
   }
 
@@ -74,6 +70,7 @@ class ApiClient {
     String? deviceModel,
     String? deviceOs,
     String? appVersion,
+    String? sdk,
   }) {
     return _post('/users/$externalId/subscriptions', {
       'type': type.wire,
@@ -81,6 +78,7 @@ class ApiClient {
       if (deviceModel != null) 'deviceModel': deviceModel,
       if (deviceOs != null) 'deviceOs': deviceOs,
       if (appVersion != null) 'appVersion': appVersion,
+      if (sdk != null) 'sdk': sdk,
     });
   }
 
@@ -93,12 +91,14 @@ class ApiClient {
     String? externalId,
     Map<String, dynamic>? properties,
     String? idempotencyKey,
+    Map<String, dynamic>? deviceContext,
   }) {
     return _post('/events', {
       'name': name,
       if (externalId != null) 'externalId': externalId,
       if (properties != null) 'properties': properties,
       if (idempotencyKey != null) 'idempotencyKey': idempotencyKey,
+      if (deviceContext != null) ...deviceContext,
     });
   }
 

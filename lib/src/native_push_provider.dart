@@ -54,7 +54,7 @@ class EngageKaroPushProvider implements PushProvider {
     try {
       final res = await _methods.invokeMethod<dynamic>('getInitialNotification');
       return res == null ? null : _asMap(res);
-    } on MissingPluginException {
+    } catch (_) {
       return null;
     }
   }
