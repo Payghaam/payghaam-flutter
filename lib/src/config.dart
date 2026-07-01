@@ -34,7 +34,9 @@ class EngageKaroConfig {
 
   /// Normalized base (no trailing slash).
   String get apiRoot {
-    final b = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+    final b = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
     return '$b/api/sdk';
   }
 }

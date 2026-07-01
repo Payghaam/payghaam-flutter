@@ -13,7 +13,8 @@ class UserManager {
   String _requireExternalId() {
     final id = _externalId();
     if (id == null) {
-      throw StateError('Call EngageKaro.login(externalId) before setting user data.');
+      throw StateError(
+          'Call EngageKaro.login(externalId) before setting user data.');
     }
     return id;
   }

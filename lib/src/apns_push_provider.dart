@@ -4,6 +4,9 @@ import 'native_push_provider.dart';
 /// Android from the single plugin (no platform branch, no companion package).
 @Deprecated('Use EngageKaroPushProvider — one provider for iOS and Android.')
 class ApnsPushProvider extends EngageKaroPushProvider {
+  /// Deprecated alias for [EngageKaroPushProvider].
+  ApnsPushProvider();
+
   /// Deprecated alias for [shareConfig].
   @Deprecated('Use shareConfig(...)')
   Future<void> shareConfigForExtension({

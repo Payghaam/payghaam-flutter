@@ -1,5 +1,7 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
 
 import 'config.dart';
@@ -12,11 +14,20 @@ class EngageKaroPushProvider implements PushProvider {
   static const MethodChannel _methods = MethodChannel('engagekaro/methods');
   static const EventChannel _onToken = EventChannel('engagekaro/onToken');
   static const EventChannel _onOpened = EventChannel('engagekaro/onOpened');
-  static const EventChannel _onForeground = EventChannel('engagekaro/onForeground');
+  static const EventChannel _onForeground =
+      EventChannel('engagekaro/onForeground');
 
   @override
-  SubscriptionType get subscriptionType =>
-      Platform.isIOS ? SubscriptionType.iosPush : SubscriptionType.androidPush;
+  SubscriptionType get subscriptionType {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return SubscriptionType.iosPush;
+      case TargetPlatform.android:
+        return SubscriptionType.androidPush;
+      default:
+        return SubscriptionType.webPush;
+    }
+  }
 
   @override
   Future<bool> requestPermission() async {
@@ -52,7 +63,8 @@ class EngageKaroPushProvider implements PushProvider {
   @override
   Future<Map<String, dynamic>?> getInitialNotification() async {
     try {
-      final res = await _methods.invokeMethod<dynamic>('getInitialNotification');
+      final res =
+          await _methods.invokeMethod<dynamic>('getInitialNotification');
       return res == null ? null : _asMap(res);
     } catch (_) {
       return null;

@@ -1,5 +1,5 @@
-import 'dart:io' show Platform;
-
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -45,27 +45,25 @@ class DeviceContext {
         if (sessionStart) 'sessionStart': true,
       };
 
-  static Future<DeviceContext> collect({bool sessionStart = false, String? pushPermission}) async {
+  static Future<DeviceContext> collect(
+      {bool sessionStart = false, String? pushPermission}) async {
     Map<dynamic, dynamic>? native;
     try {
-      native = await _methods.invokeMethod<Map<dynamic, dynamic>>('getDeviceContext');
+      native = await _methods
+          .invokeMethod<Map<dynamic, dynamic>>('getDeviceContext');
     } catch (_) {
       native = null;
     }
 
     final locale = _readLocale();
-    final fallbackOs = Platform.isIOS
-        ? 'iOS'
-        : Platform.isAndroid
-            ? 'Android'
-            : Platform.operatingSystem;
+    final fallbackOs = _fallbackOs();
 
     return DeviceContext(
       country: _str(native?['country']) ?? locale.countryCode,
       language: _str(native?['language']) ?? locale.languageCode,
       timezone: _str(native?['timezone']) ?? _fallbackTimezone(),
       os: _str(native?['os']) ?? fallbackOs,
-      osVersion: _str(native?['osVersion']) ?? Platform.operatingSystemVersion,
+      osVersion: _str(native?['osVersion']),
       appVersion: _str(native?['appVersion']),
       deviceModel: _str(native?['deviceModel']),
       sdkVersion: _str(native?['sdkVersion']) ?? kEngageKaroSdkVersion,
@@ -89,6 +87,23 @@ class DeviceContext {
       return DateTime.now().timeZoneName;
     } catch (_) {
       return null;
+    }
+  }
+
+  static String _fallbackOs() {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return 'iOS';
+      case TargetPlatform.android:
+        return 'Android';
+      case TargetPlatform.macOS:
+        return 'macOS';
+      case TargetPlatform.windows:
+        return 'Windows';
+      case TargetPlatform.linux:
+        return 'Linux';
+      case TargetPlatform.fuchsia:
+        return 'Fuchsia';
     }
   }
 }

@@ -9,7 +9,8 @@ class Storage {
 
   SharedPreferences? _prefs;
 
-  Future<SharedPreferences> get _p async => _prefs ??= await SharedPreferences.getInstance();
+  Future<SharedPreferences> get _p async =>
+      _prefs ??= await SharedPreferences.getInstance();
 
   Future<String?> getExternalId() async => (await _p).getString(_kExternalId);
   Future<void> setExternalId(String? id) async {

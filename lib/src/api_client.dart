@@ -13,7 +13,8 @@ class ApiClient {
   /// when the project requires it; sent on every call as a header.
   String? identityHash;
 
-  ApiClient(this.config, {http.Client? client}) : _http = client ?? http.Client();
+  ApiClient(this.config, {http.Client? client})
+      : _http = client ?? http.Client();
 
   Map<String, String> get _headers => {
         'content-type': 'application/json',
@@ -24,14 +25,16 @@ class ApiClient {
 
   Uri _uri(String path) => Uri.parse('${config.apiRoot}$path');
 
-  Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> _post(
+      String path, Map<String, dynamic> body) async {
     final res = await _http
         .post(_uri(path), headers: _headers, body: jsonEncode(body))
         .timeout(config.timeout);
     return _parse(res);
   }
 
-  Future<Map<String, dynamic>> _put(String path, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> _put(
+      String path, Map<String, dynamic> body) async {
     final res = await _http
         .put(_uri(path), headers: _headers, body: jsonEncode(body))
         .timeout(config.timeout);
@@ -42,7 +45,9 @@ class ApiClient {
     if (res.statusCode >= 200 && res.statusCode < 300) {
       if (res.body.isEmpty) return <String, dynamic>{};
       final decoded = jsonDecode(res.body);
-      return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{'data': decoded};
+      return decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{'data': decoded};
     }
     throw EngageKaroApiException(res.statusCode, res.body);
   }
@@ -82,7 +87,8 @@ class ApiClient {
     });
   }
 
-  Future<Map<String, dynamic>> updateTags(String externalId, Map<String, dynamic> tags) {
+  Future<Map<String, dynamic>> updateTags(
+      String externalId, Map<String, dynamic> tags) {
     return _put('/users/$externalId/tags', {'tags': tags});
   }
 

@@ -13,6 +13,8 @@ import 'user_manager.dart';
 /// Entry point for the EngageKaro Flutter SDK.
 class EngageKaro with WidgetsBindingObserver {
   EngageKaro._();
+
+  /// Singleton SDK instance. Call [initialize] once at app startup.
   static final EngageKaro instance = EngageKaro._();
 
   late EngageKaroConfig _config;
@@ -35,13 +37,15 @@ class EngageKaro with WidgetsBindingObserver {
   Future<void>? _profileSyncFuture;
   Future<void>? _postLoginFuture;
 
+  /// User-scoped helpers (tags, email, SMS). Requires [login] first.
   UserManager get user => _user;
 
   /// True after [initialize] has completed its local setup (network pings may still be in flight).
   bool get isInitialized => _initialized;
 
   /// Whether network calls are currently allowed (respects consent gating).
-  bool get _canSend => _initialized && (!_config.requireConsent || _consentGiven);
+  bool get _canSend =>
+      _initialized && (!_config.requireConsent || _consentGiven);
 
   void _reportError(Object error, String context) {
     if (_config.debug) {
@@ -95,7 +99,8 @@ class EngageKaro with WidgetsBindingObserver {
   Future<void> _syncDeviceProfile({bool sessionStart = false}) {
     final existing = _profileSyncFuture;
     if (existing != null) return existing;
-    _profileSyncFuture = _doSyncDeviceProfile(sessionStart: sessionStart).whenComplete(() {
+    _profileSyncFuture =
+        _doSyncDeviceProfile(sessionStart: sessionStart).whenComplete(() {
       _profileSyncFuture = null;
     });
     return _profileSyncFuture!;
@@ -201,10 +206,12 @@ class EngageKaro with WidgetsBindingObserver {
   }
 
   /// Track a custom event (drives journeys + analytics).
-  Future<void> trackEvent(String name, [Map<String, dynamic>? properties]) async {
+  Future<void> trackEvent(String name,
+      [Map<String, dynamic>? properties]) async {
     if (!_canSend) return;
     try {
-      await _api.track(name: name, externalId: _externalId, properties: properties);
+      await _api.track(
+          name: name, externalId: _externalId, properties: properties);
     } catch (e) {
       _reportError(e, 'trackEvent');
     }
@@ -229,11 +236,13 @@ class EngageKaro with WidgetsBindingObserver {
 
   /// Manually register a device push token (call this if you manage tokens
   /// yourself instead of via a PushProvider).
-  Future<void> registerPushToken(String token, SubscriptionType platform) async {
+  Future<void> registerPushToken(
+      String token, SubscriptionType platform) async {
     await _registerPushToken(token, platform: platform);
   }
 
-  Future<void> _registerPushToken(String token, {SubscriptionType? platform}) async {
+  Future<void> _registerPushToken(String token,
+      {SubscriptionType? platform}) async {
     if (!_canSend) return;
     if (_externalId == null) {
       _pendingPushToken = token; // register once the user logs in
@@ -246,7 +255,9 @@ class EngageKaro with WidgetsBindingObserver {
         type: platform ?? _push.subscriptionType,
         token: token,
         deviceModel: ctx.deviceModel,
-        deviceOs: ctx.osVersion != null ? '${ctx.os ?? ''} ${ctx.osVersion}'.trim() : ctx.os,
+        deviceOs: ctx.osVersion != null
+            ? '${ctx.os ?? ''} ${ctx.osVersion}'.trim()
+            : ctx.os,
         appVersion: ctx.appVersion,
         sdk: ctx.sdkVersion,
       );
@@ -257,6 +268,8 @@ class EngageKaro with WidgetsBindingObserver {
   }
 
   // ── Consent gating ──────────────────────────────────────────────────────────
+
+  /// Updates whether consent is required before any network calls are made.
   void setConsentRequired(bool required) {
     _config = EngageKaroConfig(
       appId: _config.appId,
@@ -269,6 +282,8 @@ class EngageKaro with WidgetsBindingObserver {
     );
   }
 
+  /// Records user consent. When [given] is true, identification and token
+  /// registration are re-run if a user is already logged in.
   Future<void> setConsentGiven(bool given) async {
     _consentGiven = given;
     await _storage.setConsent(given);

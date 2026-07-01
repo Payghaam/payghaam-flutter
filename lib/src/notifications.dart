@@ -42,15 +42,15 @@ class NoopPushProvider implements PushProvider {
   SubscriptionType get subscriptionType => SubscriptionType.androidPush;
 
   @override
-  Stream<String> get onTokenRefresh => Stream<String>.empty();
+  Stream<String> get onTokenRefresh => const Stream<String>.empty();
 
   @override
   Stream<Map<String, dynamic>> get onNotificationOpened =>
-      Stream<Map<String, dynamic>>.empty();
+      const Stream<Map<String, dynamic>>.empty();
 
   @override
   Stream<Map<String, dynamic>> get onForegroundMessage =>
-      Stream<Map<String, dynamic>>.empty();
+      const Stream<Map<String, dynamic>>.empty();
 
   @override
   Future<Map<String, dynamic>?> getInitialNotification() async => null;
