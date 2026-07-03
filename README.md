@@ -60,6 +60,8 @@ Platform setup:
   Service Extension.
 - **Android** — [ANDROID_SETUP.md](./ANDROID_SETUP.md): add a Firebase project +
   `google-services.json` (no `firebase_messaging` plugin needed).
+- **Custom sounds** — [CUSTOM_SOUND.md](./CUSTOM_SOUND.md): bundle a sound file
+  and map the dashboard's *Custom sound* name to it on each platform.
 
 ## Identity Verification
 
