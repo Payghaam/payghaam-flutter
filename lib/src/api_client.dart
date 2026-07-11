@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'config.dart';
+import 'offline_queue.dart';
 
 /// Thin REST client over the EngageKaro `/api/sdk/*` endpoints.
 /// Every call is authenticated with the project's SDK key.
@@ -25,18 +27,43 @@ class ApiClient {
 
   Uri _uri(String path) => Uri.parse('${config.apiRoot}$path');
 
+  /// Installed by EngageKaro on init; parks retryable failures offline.
+  OfflineQueue? queue;
+
+  // Fire-and-forget path: send now, or park in the offline queue on a
+  // retryable failure so offline activity isn't lost.
   Future<Map<String, dynamic>> _post(
-      String path, Map<String, dynamic> body) async {
-    final res = await _http
-        .post(_uri(path), headers: _headers, body: jsonEncode(body))
-        .timeout(config.timeout);
-    return _parse(res);
+      String path, Map<String, dynamic> body) {
+    return _sendOrQueue('POST', path, body);
   }
 
   Future<Map<String, dynamic>> _put(
-      String path, Map<String, dynamic> body) async {
-    final res = await _http
-        .put(_uri(path), headers: _headers, body: jsonEncode(body))
+      String path, Map<String, dynamic> body) {
+    return _sendOrQueue('PUT', path, body);
+  }
+
+  Future<Map<String, dynamic>> _sendOrQueue(
+      String method, String path, Map<String, dynamic> body) async {
+    try {
+      final res = await rawRequest(method, path, body);
+      unawaited(queue?.flush());
+      return res;
+    } catch (e) {
+      final q = queue;
+      if (q != null && OfflineQueue.isRetryable(e)) {
+        await q.enqueue(method, path, body);
+        return <String, dynamic>{};
+      }
+      rethrow;
+    }
+  }
+
+  /// Direct request without queueing — used by OfflineQueue's drain.
+  Future<Map<String, dynamic>> rawRequest(
+      String method, String path, Map<String, dynamic> body) async {
+    final res = await (method == 'PUT'
+            ? _http.put(_uri(path), headers: _headers, body: jsonEncode(body))
+            : _http.post(_uri(path), headers: _headers, body: jsonEncode(body)))
         .timeout(config.timeout);
     return _parse(res);
   }

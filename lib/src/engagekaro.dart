@@ -7,6 +7,7 @@ import 'config.dart';
 import 'device_context.dart';
 import 'native_push_provider.dart';
 import 'notifications.dart';
+import 'offline_queue.dart';
 import 'storage.dart';
 import 'user_manager.dart';
 
@@ -60,6 +61,7 @@ class EngageKaro with WidgetsBindingObserver {
   Future<void> initialize(EngageKaroConfig config, {PushProvider? push}) async {
     _config = config;
     _api = ApiClient(config);
+    _api.queue = OfflineQueue(_api.rawRequest);
     _user = UserManager(_api, () => _externalId, () => _canSend);
     if (push != null) _push = push;
 
@@ -90,6 +92,8 @@ class EngageKaro with WidgetsBindingObserver {
   }
 
   Future<void> _onForeground() async {
+    // Drain anything queued while the device was offline.
+    unawaited(_api.queue?.flush());
     if (!_canSend || _externalId == null) return;
     if (!_sessions.noteForegroundResume()) return;
     unawaited(_syncDeviceProfile(sessionStart: true));
