@@ -12,3 +12,5 @@ export 'src/native_push_provider.dart';
 // ignore: deprecated_member_use_from_same_package
 export 'src/apns_push_provider.dart';
 export 'src/api_client.dart' show EngageKaroApiException;
+// Required by dart_plugin_registrant for linux/macos/windows desktop builds.
+export 'engagekaro_flutter_stub.dart' show EngagekaroFlutterPlugin;
