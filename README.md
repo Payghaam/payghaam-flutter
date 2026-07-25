@@ -73,6 +73,10 @@ With **no** subscriber, the SDK opens `ek_url` itself (`ACTION_VIEW` on Android,
 is yours. Subscribe right after `initialize()`; a tap that cold-launched the app waits
 a short grace period for you before the fallback takes over.
 
+> **Subscribe via `EngageKaro.instance.onNotificationOpened`, not the provider's
+> stream.** Both deliver the same payload, but the SDK's own stream is the public
+> API, and subscribing to it is what tells the SDK you're handling routing.
+
 > **The scheme must be registered with the OS or nothing opens.** A custom scheme
 > like `myapp://` is claimed by no app until you declare it — an `<intent-filter>`
 > on Android ([setup](./ANDROID_SETUP.md#4-register-your-deep-link-scheme-required-for-the-campaign-deep-link-url))

@@ -48,17 +48,40 @@ class EngageKaroPushProvider implements PushProvider {
     }
   }
 
+  // Each of these streams is created ONCE and shared by every subscriber.
+  //
+  // `EventChannel.receiveBroadcastStream()` builds a fresh StreamController per
+  // call and sends its own `listen` to the platform. The native side keeps a
+  // single sink per channel, so the last subscriber silently replaced the
+  // previous one: when a host app did
+  //
+  //     EngageKaro.instance.initialize(config, push: push);  // SDK subscribes
+  //     push.onNotificationOpened.listen(...);               // app subscribes
+  //
+  // the app's listener orphaned the SDK's, and the SDK stopped reporting `opened`
+  // receipts entirely — while `delivered` kept working, because Android posts that
+  // one natively from the FCM service without going through Dart.
+  //
+  // Caching keeps one platform subscription and lets both listeners receive.
+  //
+  // Static, not per-instance: the EventChannels themselves are `static const`, so
+  // two provider instances would collide on the same native sink. Sharing the
+  // stream makes that impossible rather than merely unlikely.
+  static Stream<String>? _tokenStream;
+  static Stream<Map<String, dynamic>>? _openedStream;
+  static Stream<Map<String, dynamic>>? _foregroundStream;
+
   @override
   Stream<String> get onTokenRefresh =>
-      _onToken.receiveBroadcastStream().map((e) => e as String);
+      _tokenStream ??= _onToken.receiveBroadcastStream().map((e) => e as String);
 
   @override
   Stream<Map<String, dynamic>> get onNotificationOpened =>
-      _onOpened.receiveBroadcastStream().map(_asMap);
+      _openedStream ??= _onOpened.receiveBroadcastStream().map(_asMap);
 
   @override
   Stream<Map<String, dynamic>> get onForegroundMessage =>
-      _onForeground.receiveBroadcastStream().map(_asMap);
+      _foregroundStream ??= _onForeground.receiveBroadcastStream().map(_asMap);
 
   @override
   Future<Map<String, dynamic>?> getInitialNotification() async {

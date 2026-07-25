@@ -204,10 +204,31 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
       if (s != null) s.success(data) else initialNotification = data
     }
 
+    /**
+     * One sink per channel. That is only safe because the Dart side shares a single
+     * cached stream per channel (see native_push_provider.dart) — if two Dart
+     * subscriptions were ever opened against the same channel, the second `listen`
+     * would land here and silently orphan the first. That exact bug stopped the SDK
+     * reporting `opened` receipts when a host app subscribed to
+     * `onNotificationOpened` after `initialize()`.
+     */
     private fun attachSink(channel: Channel, sink: EventChannel.EventSink?) {
       when (channel) {
         Channel.TOKEN -> { tokenSink = sink; if (sink != null) { tokenBuffer.forEach { sink.success(it) }; tokenBuffer.clear() } }
-        Channel.OPENED -> { openedSink = sink; if (sink != null) { openedBuffer.forEach { sink.success(it) }; openedBuffer.clear() } }
+        Channel.OPENED -> {
+          openedSink = sink
+          if (sink != null) {
+            openedBuffer.forEach { sink.success(it) }
+            openedBuffer.clear()
+            // A tap that cold-started the app is stashed here by emitOpened before
+            // Dart could subscribe. Hand it over now rather than relying solely on
+            // getInitialNotification, so the receipt fires either way.
+            initialNotification?.let { pending ->
+              initialNotification = null
+              sink.success(pending)
+            }
+          }
+        }
         Channel.FOREGROUND -> { foregroundSink = sink; if (sink != null) { foregroundBuffer.forEach { sink.success(it) }; foregroundBuffer.clear() } }
       }
     }
