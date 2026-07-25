@@ -30,7 +30,12 @@ class EngagekaroFirebaseMessagingService : FirebaseMessagingService() {
   override fun onMessageReceived(message: RemoteMessage) {
     val data = HashMap<String, Any?>(message.data)
 
-    message.data["ek_message_id"]?.let { reportDelivered(it) }
+    // ek_subscription_id names the device this copy was addressed to. Without it
+    // the server can't tell which of a subscriber's devices reported, and one
+    // device's receipt gets applied to all of them.
+    message.data["ek_message_id"]?.let {
+      reportDelivered(it, message.data["ek_subscription_id"])
+    }
     EngagekaroFlutterPlugin.emitForeground(data)
     showNotification(message)
   }
@@ -142,7 +147,7 @@ class EngagekaroFirebaseMessagingService : FirebaseMessagingService() {
 
   /// Report a `delivered` receipt using the natively-stored config (works while
   /// the app is terminated, since FCM starts this service in the app process).
-  private fun reportDelivered(messageId: String) {
+  private fun reportDelivered(messageId: String, subscriptionId: String?) {
     val prefs = getSharedPreferences(EngagekaroFlutterPlugin.PREFS, Context.MODE_PRIVATE)
     val apiBase = prefs.getString("apiBase", null) ?: return
     val apiKey = prefs.getString("apiKey", null) ?: return
@@ -163,6 +168,9 @@ class EngagekaroFirebaseMessagingService : FirebaseMessagingService() {
           put("messageId", messageId)
           put("event", "delivered")
           externalId?.let { put("externalId", it) }
+          subscriptionId?.let {
+            put("properties", JSONObject().put("ek_subscription_id", it))
+          }
         }
         OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
         conn.responseCode
