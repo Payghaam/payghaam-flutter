@@ -57,6 +57,21 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
       result(n)
     case "getDeviceContext":
       result(Self.deviceContext())
+    case "openUrl":
+      // Deep-link fallback, used only when the Dart layer sees no app subscriber.
+      guard let args = call.arguments as? [String: Any],
+            let raw = args["url"] as? String,
+            let url = URL(string: raw.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+        result(false)
+        return
+      }
+      DispatchQueue.main.async {
+        guard UIApplication.shared.canOpenURL(url) else {
+          result(false)
+          return
+        }
+        UIApplication.shared.open(url, options: [:]) { opened in result(opened) }
+      }
     case "setSharedConfig":
       if let args = call.arguments as? [String: Any] { saveSharedConfig(args) }
       result(nil)

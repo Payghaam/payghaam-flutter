@@ -71,6 +71,18 @@ class EngageKaroPushProvider implements PushProvider {
     }
   }
 
+  @override
+  Future<bool> openDeepLink(String url) async {
+    try {
+      return (await _methods.invokeMethod<bool>('openUrl', {'url': url})) ??
+          false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   Map<String, dynamic> _asMap(dynamic e) =>
       (e as Map).map((k, v) => MapEntry(k.toString(), v));
 

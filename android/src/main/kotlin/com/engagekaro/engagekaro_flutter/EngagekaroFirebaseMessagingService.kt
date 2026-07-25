@@ -6,6 +6,10 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.AudioAttributes
+import android.net.Uri
 import android.os.Build
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -36,14 +40,10 @@ class EngagekaroFirebaseMessagingService : FirebaseMessagingService() {
     val body = message.notification?.body ?: message.data["body"]
     if (title == null && body == null) return
 
-    val channelId = "engagekaro_default"
     val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-      nm.getNotificationChannel(channelId) == null) {
-      nm.createNotificationChannel(
-        NotificationChannel(channelId, "Notifications", NotificationManager.IMPORTANCE_HIGH)
-      )
-    }
+    val soundName = message.data["ek_sound"]
+    val sound = soundUri(soundName)
+    val channelId = ensureChannel(nm, sound, soundName)
 
     val launch = packageManager.getLaunchIntentForPackage(packageName)?.apply {
       flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -59,7 +59,7 @@ class EngagekaroFirebaseMessagingService : FirebaseMessagingService() {
     val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
       Notification.Builder(this, channelId)
     else
-      Notification.Builder(this)
+      Notification.Builder(this).also { if (sound != null) it.setSound(sound) }
 
     builder.setContentTitle(title)
       .setContentText(body)
@@ -67,7 +67,74 @@ class EngagekaroFirebaseMessagingService : FirebaseMessagingService() {
       .setSmallIcon(applicationInfo.icon)
       .setContentIntent(pending)
 
+    // Rich image. Safe to fetch inline: onMessageReceived already runs off the main
+    // thread, and the download is tightly bounded.
+    bigPicture(message.data["ek_image"])?.let { bitmap ->
+      builder.setLargeIcon(bitmap)
+      builder.setStyle(Notification.BigPictureStyle().bigPicture(bitmap))
+    }
+
     nm.notify(id, builder.build())
+  }
+
+  /** Downloads the notification image, or null if it can't be had quickly. */
+  private fun bigPicture(url: String?): Bitmap? {
+    if (url.isNullOrBlank()) return null
+    return try {
+      val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+        connectTimeout = 5_000
+        readTimeout = 5_000
+        doInput = true
+      }
+      try {
+        conn.inputStream.use { BitmapFactory.decodeStream(it) }
+      } finally {
+        conn.disconnect()
+      }
+    } catch (_: Exception) {
+      // An unreachable or malformed image must never cost the notification.
+      null
+    }
+  }
+
+  /**
+   * Resolves a `res/raw` resource name to a playable URI, or null when the app ships
+   * no such file — a bad URI silences the notification entirely, so an unresolvable
+   * name falls back to the system default rather than to nothing.
+   */
+  private fun soundUri(name: String?): Uri? {
+    if (name.isNullOrBlank()) return null
+    val resId = resources.getIdentifier(name, "raw", packageName)
+    if (resId == 0) return null
+    return Uri.parse("android.resource://$packageName/$resId")
+  }
+
+  /**
+   * Returns the channel to post on, creating it if needed. On Android 8+ the sound
+   * belongs to the channel and is immutable once created, so a custom sound means
+   * posting to a channel dedicated to that sound.
+   */
+  private fun ensureChannel(nm: NotificationManager, sound: Uri?, soundName: String?): String {
+    val default = "engagekaro_default"
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return default
+
+    val channelId =
+      if (sound == null || soundName.isNullOrBlank()) default else "${default}_sound_$soundName"
+    if (nm.getNotificationChannel(channelId) != null) return channelId
+
+    val label = if (channelId == default) "Notifications" else "Notifications ($soundName)"
+    val channel = NotificationChannel(channelId, label, NotificationManager.IMPORTANCE_HIGH)
+    if (sound != null) {
+      channel.setSound(
+        sound,
+        AudioAttributes.Builder()
+          .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+          .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+          .build()
+      )
+    }
+    nm.createNotificationChannel(channel)
+    return channelId
   }
 
   private fun notificationId(message: RemoteMessage): Int =

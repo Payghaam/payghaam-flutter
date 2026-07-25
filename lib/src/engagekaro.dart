@@ -38,8 +38,32 @@ class EngageKaro with WidgetsBindingObserver {
   Future<void>? _profileSyncFuture;
   Future<void>? _postLoginFuture;
 
+  final StreamController<Map<String, dynamic>> _opened =
+      StreamController<Map<String, dynamic>>.broadcast();
+
+  /// How long a cold-launch tap waits for the app to subscribe to
+  /// [onNotificationOpened] before the SDK decides nobody is listening and opens
+  /// the deep link itself. A tap that launches the app necessarily arrives before
+  /// `initialize()` returns, so without this window the fallback would always win
+  /// the race against an app that does its own routing.
+  static const Duration _openedHandlerGrace = Duration(milliseconds: 400);
+
   /// User-scoped helpers (tags, email, SMS). Requires [login] first.
   UserManager get user => _user;
+
+  /// Emits the full push payload whenever the user taps a notification — your
+  /// custom `data` keys plus EngageKaro's own `ek_*` keys.
+  ///
+  /// ```dart
+  /// EngageKaro.instance.onNotificationOpened.listen((payload) {
+  ///   final target = payload['targetId'];
+  ///   if (target is String) navigator.pushNamed('/offers/$target');
+  /// });
+  /// ```
+  /// With no subscriber, the SDK opens `ek_url` (the campaign's deep link)
+  /// itself. Subscribing suppresses that — routing becomes yours, including the
+  /// deep link, available as `payload['ek_url']`.
+  Stream<Map<String, dynamic>> get onNotificationOpened => _opened.stream;
 
   /// True after [initialize] has completed its local setup (network pings may still be in flight).
   bool get isInitialized => _initialized;
@@ -74,7 +98,11 @@ class EngageKaro with WidgetsBindingObserver {
 
     try {
       final initial = await _push.getInitialNotification();
-      if (initial != null) _reportReceiptFromData(initial, 'opened');
+      // Not awaited: dispatch gives the app a grace window to subscribe to
+      // onNotificationOpened, and initialize() must not block on that.
+      if (initial != null) {
+        unawaited(_dispatchOpened(initial, allowGrace: true));
+      }
     } catch (e) {
       _reportError(e, 'getInitialNotification');
     }
@@ -136,13 +164,51 @@ class EngageKaro with WidgetsBindingObserver {
       onError: (e) => _reportError(e, 'onTokenRefresh'),
     ));
     _subs.add(_push.onNotificationOpened.listen(
-      (data) => _reportReceiptFromData(data, 'opened'),
+      (data) => unawaited(_dispatchOpened(data)),
       onError: (e) => _reportError(e, 'onNotificationOpened'),
     ));
     _subs.add(_push.onForegroundMessage.listen(
       (data) => _reportReceiptFromData(data, 'delivered'),
       onError: (e) => _reportError(e, 'onForegroundMessage'),
     ));
+  }
+
+  /// Route a notification tap: always report the receipt, then hand the payload
+  /// to the app if it is listening, else fall back to opening `ek_url`.
+  Future<void> _dispatchOpened(
+    Map<String, dynamic> data, {
+    bool allowGrace = false,
+  }) async {
+    _reportReceiptFromData(data, 'opened');
+
+    if (allowGrace && !_opened.hasListener) {
+      await Future<void>.delayed(_openedHandlerGrace);
+    }
+    if (_opened.hasListener) {
+      _opened.add(data);
+      return;
+    }
+
+    final url = data['ek_url'];
+    if (url is! String || url.trim().isEmpty) return;
+    try {
+      final opened = await _push.openDeepLink(url.trim());
+      if (!opened) {
+        // Silently doing nothing here is the single most confusing failure in the
+        // whole tap path, so say exactly what's wrong: the platform found no app
+        // willing to handle the scheme.
+        _reportError(
+          'Nothing on the device can open "$url". Register the scheme with the OS: '
+          'on Android add an <intent-filter> with android.intent.action.VIEW, '
+          'category BROWSABLE/DEFAULT and your <data android:scheme="..."/> to the '
+          'launcher activity in AndroidManifest.xml; on iOS add a URL Type in '
+          'Info.plist (CFBundleURLSchemes).',
+          'openDeepLink',
+        );
+      }
+    } catch (e) {
+      _reportError(e, 'openDeepLink');
+    }
   }
 
   void _reportReceiptFromData(Map<String, dynamic> data, String event) {
@@ -305,6 +371,7 @@ class EngageKaro with WidgetsBindingObserver {
       s.cancel();
     }
     _subs.clear();
+    unawaited(_opened.close());
     _api.close();
   }
 }

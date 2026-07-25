@@ -49,6 +49,43 @@ await push.shareConfig(
 );
 ```
 
+## 4. Register your deep-link scheme (required for the campaign "Deep link URL")
+
+A URL only opens if some app on the device has claimed its scheme. Nothing claims
+`myapp://` by default — not even you — so add a `VIEW` intent-filter to your
+launcher activity in `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<activity android:name=".MainActivity" android:launchMode="singleTop" ...>
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+    </intent-filter>
+
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="myapp"/>
+    </intent-filter>
+</activity>
+```
+
+Then set the campaign's **Deep link URL** to a matching URL (`myapp://offers/summer`).
+
+Without this the tap still opens the app and your `onNotificationOpened` listener
+still fires with the payload — only the SDK's automatic `ACTION_VIEW` fallback has
+nowhere to go. With `debug: true` in your config the SDK logs exactly that.
+
+Verify the scheme resolves without sending a push:
+
+```bash
+adb shell am start -a android.intent.action.VIEW -d "myapp://offers/summer"
+```
+
+`https://` URLs need no intent-filter — a browser already claims them — but they
+open the browser unless you configure Android App Links with a verified domain.
+
 ## How delivery is confirmed in each app state (Android)
 
 | App state | Mechanism | Receipt |

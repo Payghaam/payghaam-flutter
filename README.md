@@ -54,6 +54,33 @@ await push.shareConfig(
 );
 ```
 
+## Handling taps and deep links
+
+A campaign's **Deep link URL** arrives as `ek_url`, and anything you pass as `data`
+on `POST /api/notifications` arrives alongside it:
+
+```dart
+EngageKaro.instance.onNotificationOpened.listen((payload) {
+  // payload['ek_url']   → 'myapp://offers/summer'
+  // payload['targetId'] → your own data key
+  final target = payload['targetId'];
+  if (target is String) navigatorKey.currentState?.pushNamed('/offers/$target');
+});
+```
+
+With **no** subscriber, the SDK opens `ek_url` itself (`ACTION_VIEW` on Android,
+`openURL` on iOS). Subscribing suppresses that, so routing — including the deep link —
+is yours. Subscribe right after `initialize()`; a tap that cold-launched the app waits
+a short grace period for you before the fallback takes over.
+
+> **The scheme must be registered with the OS or nothing opens.** A custom scheme
+> like `myapp://` is claimed by no app until you declare it — an `<intent-filter>`
+> on Android ([setup](./ANDROID_SETUP.md#4-register-your-deep-link-scheme-required-for-the-campaign-deep-link-url))
+> and a URL Type on iOS ([setup](./IOS_SETUP.md)). Until then the tap opens the app
+> and your listener still fires, but the automatic fallback has nowhere to send it.
+
+Reserved payload keys: `ek_message_id`, `ek_url`, `ek_image`, `ek_sound`, `title`, `body`.
+
 Platform setup:
 
 - **iOS** — [IOS_SETUP.md](./IOS_SETUP.md): capabilities, App Group, Notification

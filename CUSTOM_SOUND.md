@@ -19,9 +19,12 @@ fields** — fill in whichever platforms you target:
 What EngageKaro puts on the wire:
 
 - **iOS (APNs):** `aps.sound` = `soundIos`.
-- **Android (FCM):** `android.notification.sound` = `soundAndroid`, and the same
-  value is mirrored in the data payload as `ek_sound` so the SDK's own
-  notification builder can read it.
+- **Android (FCM):** `ek_sound` = `soundAndroid`, in the data payload. Android
+  pushes are sent data-only (so the SDK can attach deep links to the tap), which
+  means FCM never draws the notification and `android.notification.sound` would
+  have nothing to apply to. The SDK's own builder reads `ek_sound` instead and
+  routes the notification to a channel carrying that sound — in every app state,
+  foreground included.
 
 (`sound` — a single legacy value — is still honored as a fallback for either
 platform when the platform-specific field is empty.) Leave a field blank and that
@@ -62,40 +65,19 @@ means routing the message to a channel that already has that sound.
    with no spaces. Enter that name (`chime`) in the EngageKaro **Android sound**
    field.
 
-2. **Create a channel for that sound and route to it.** The SDK's
-   `EngagekaroFirebaseMessagingService` builds the notification itself and reads
-   `ek_sound` from the data payload. Extend `showNotification` to map that name
-   to a per-sound channel:
+2. **That's it — the SDK handles the channel.** `EngagekaroFirebaseMessagingService`
+   reads `ek_sound`, resolves it against `res/raw`, and posts to a channel
+   dedicated to that sound (`engagekaro_default_sound_chime`), creating it on
+   first use. On **Android 7 and below**, where channels don't exist, it calls
+   `builder.setSound(uri)` directly.
 
-   ```kotlin
-   val soundName = message.data["ek_sound"]           // e.g. "chime"
-   val channelId = if (soundName.isNullOrBlank()) "engagekaro_default"
-                   else "engagekaro_sound_$soundName"
-
-   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-       nm.getNotificationChannel(channelId) == null) {
-     val channel = NotificationChannel(
-       channelId, "Notifications", NotificationManager.IMPORTANCE_HIGH,
-     )
-     if (!soundName.isNullOrBlank()) {
-       // soundAndroid arrives already extension-free (a res/raw resource name).
-       val uri = Uri.parse("android.resource://$packageName/raw/$soundName")
-       val attrs = AudioAttributes.Builder()
-         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-         .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-         .build()
-       channel.setSound(uri, attrs)
-     }
-     nm.createNotificationChannel(channel)
-   }
-   ```
-
-   On **Android 7 and below** there are no channels; call
-   `builder.setSound(uri)` on the `Notification.Builder` instead.
+   If the name doesn't resolve to a bundled `res/raw` file, the SDK falls back to
+   the default channel and the system sound — a notification with a broken sound
+   URI would otherwise be silent.
 
 3. **Keep names stable.** Because a channel's sound is locked after creation,
-   pick a sound name per channel and don't reuse the same channel id with a
-   different file — bump the name (`chime`, `chime_v2`) if you change the audio.
+   don't ship a different audio file under a name you've already used — bump the
+   name (`chime` → `chime_v2`) instead, or existing installs keep the old sound.
 
 ---
 

@@ -27,6 +27,11 @@ abstract class PushProvider {
   /// Returns the notification that cold-launched the app (tapped from terminated
   /// state), or null. Used to report the initial `opened` receipt on startup.
   Future<Map<String, dynamic>?> getInitialNotification();
+
+  /// Hands [url] to the platform (Android `ACTION_VIEW` / iOS `openURL`).
+  /// Used for the deep-link fallback when the app listens to no tap stream.
+  /// Returns whether anything could handle it.
+  Future<bool> openDeepLink(String url);
 }
 
 /// Default no-op provider used when the app hasn't supplied one yet. Lets the
@@ -54,4 +59,7 @@ class NoopPushProvider implements PushProvider {
 
   @override
   Future<Map<String, dynamic>?> getInitialNotification() async => null;
+
+  @override
+  Future<bool> openDeepLink(String url) async => false;
 }

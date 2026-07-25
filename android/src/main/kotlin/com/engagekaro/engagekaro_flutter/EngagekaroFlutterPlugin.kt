@@ -55,6 +55,7 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         initialNotification = null
       }
       "getDeviceContext" -> result.success(deviceContext())
+      "openUrl" -> result.success(openUrl(call.argument<String>("url")))
       "setSharedConfig" -> {
         @Suppress("UNCHECKED_CAST")
         val args = call.arguments as? Map<String, Any?>
@@ -62,6 +63,25 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         result.success(null)
       }
       else -> result.notImplemented()
+    }
+  }
+
+  /// Deep-link fallback, used only when the Dart layer sees no app subscriber.
+  /// Prefers the current activity so the link opens in the app's own task.
+  private fun openUrl(url: String?): Boolean {
+    if (url.isNullOrBlank()) return false
+    val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))
+    val host = activity
+    return try {
+      if (host != null) {
+        host.startActivity(intent)
+      } else {
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+      }
+      true
+    } catch (_: android.content.ActivityNotFoundException) {
+      false
     }
   }
 
