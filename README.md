@@ -33,9 +33,8 @@ await EngageKaro.instance.trackEvent('purchase', {'sku': 'sku_123'});
 ## Enabling push
 
 Push is native on **both** platforms from this one plugin — **iOS → APNs**
-(no Firebase), **Android → FCM** (the plugin depends on the `firebase-messaging`
-Android library directly). There's **no platform branch** and no `firebase_messaging`
-in your app's pubspec.
+(no Firebase), **Android → FCM**. There's **no platform branch** and no
+`firebase_messaging` in your app's pubspec.
 
 `EngageKaroPushProvider` is the default, so simply:
 
@@ -117,3 +116,21 @@ Never ship the secret in the app.
 | `trackEvent` | `POST /api/sdk/events` |
 
 Auth uses the project **SDK key** as a bearer token. Use HTTPS in production.
+
+## Architecture
+
+This plugin is a thin wrapper over the canonical native SDKs (`sdks/ios`,
+`sdks/android`) rather than its own implementation — see
+`sdk-native-wrapper-design.md` at the repo root for the full design.
+
+- **iOS/Android**: `initialize`/`login`/`trackEvent`/`user.addTag(s)`/push
+  registration/receipt reporting all delegate to the native SDK (via a
+  CocoaPods/SPM dependency on iOS, a Gradle composite build on Android), which
+  owns the HTTP client and offline queue. Dart only owns tap dispatch,
+  deep-link fallback, and foreground/session timing — deliberately, so those
+  don't get double-handled by both the native SDK's own machinery and the
+  plugin's.
+- **Web/desktop**: there's no native SDK to delegate to on these platforms
+  (push was never supported there either), so Dart falls back to its own
+  `package:http`-based client automatically when the native plugin isn't
+  present. That's the one place this SDK still makes its own HTTP calls.

@@ -54,6 +54,11 @@ await push.shareConfig(
    e.g. `EngageKaroNSE`. Don't activate the scheme.
 2. Replace the generated `NotificationService.swift` with
    [`ios_extension/NotificationService.swift`](./ios_extension/NotificationService.swift).
+   It calls into the canonical `EngageKaro` package (`import EngageKaro`), so
+   add that as a dependency of the **new NSE target** — Xcode → NSE target →
+   **General → Frameworks and Libraries → +** (if using CocoaPods, add a
+   `target 'EngageKaroNSE' do pod 'EngageKaro', :path => '...' end` block to
+   your Podfile and re-run `pod install` instead).
 3. NSE target → **Signing & Capabilities** → add **App Groups** → the **same**
    group id as the app.
 4. NSE target → `Info.plist` → add the same `EngageKaroAppGroup` key/value.

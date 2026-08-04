@@ -10,7 +10,12 @@
 //    App Group id (e.g. `group.com.yourcompany.app.engagekaro`).
 //  - The main app calls `ApnsPushProvider.shareConfigForExtension(...)` after
 //    login so apiBase/apiKey/externalId are available here.
+//  - The NSE target depends on the canonical `EngageKaro` pod/package
+//    (sdks/ios) — add `target 'YourNSETarget' do pod 'EngageKaro', :path =>
+//    '...' end` to your Podfile, or add the EngageKaro Swift package as a
+//    dependency of the target in Xcode. See sdk-native-wrapper-design.md.
 
+import EngageKaro
 import UserNotifications
 
 class NotificationService: UNNotificationServiceExtension {
@@ -33,7 +38,7 @@ class NotificationService: UNNotificationServiceExtension {
     if let urlString = userInfo["ek_image"] as? String,
        let url = URL(string: urlString),
        let best = bestAttempt {
-      downloadAttachment(url: url) { attachment in
+      EngageKaroReceipts.downloadAttachment(url: url) { attachment in
         if let a = attachment { best.attachments = [a] }
         contentHandler(best)
       }
@@ -52,46 +57,24 @@ class NotificationService: UNNotificationServiceExtension {
   // MARK: - Receipt
 
   private func reportDelivered(messageId: String) {
+    // Flutter's `engagekaro.*` App Group key scheme — see
+    // engagekaro_flutter's saveSharedConfig, which writes these dotted keys
+    // (distinct from the canonical SDK's own `ek_*` scheme used by native and
+    // React Native apps; left as-is to avoid breaking already-integrated apps'
+    // NSE templates — see sdk-native-wrapper-design.md).
     guard
       let appGroup = Bundle.main.object(forInfoDictionaryKey: "EngageKaroAppGroup") as? String,
       let defaults = UserDefaults(suiteName: appGroup),
       let apiBase = defaults.string(forKey: "engagekaro.apiBase"),
-      let apiKey = defaults.string(forKey: "engagekaro.apiKey"),
-      let url = URL(string: "\(apiBase)/api/sdk/receipts")
+      let apiKey = defaults.string(forKey: "engagekaro.apiKey")
     else { return }
 
-    let externalId = defaults.string(forKey: "engagekaro.externalId")
-    let identityHash = defaults.string(forKey: "engagekaro.identityHash")
-    var body: [String: Any] = ["messageId": messageId, "event": "delivered"]
-    if let ext = externalId { body["externalId"] = ext }
-
-    var req = URLRequest(url: url)
-    req.httpMethod = "POST"
-    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-    if let hash = identityHash { req.setValue(hash, forHTTPHeaderField: "X-EngageKaro-Identity-Hash") }
-    req.httpBody = try? JSONSerialization.data(withJSONObject: body)
-
-    // NSE has a short lifetime; block briefly so the request goes out.
-    let semaphore = DispatchSemaphore(value: 0)
-    URLSession.shared.dataTask(with: req) { _, _, _ in semaphore.signal() }.resume()
-    _ = semaphore.wait(timeout: .now() + 5)
-  }
-
-  private func downloadAttachment(
-    url: URL,
-    completion: @escaping (UNNotificationAttachment?) -> Void
-  ) {
-    URLSession.shared.downloadTask(with: url) { location, _, _ in
-      guard let location = location else { completion(nil); return }
-      let tmp = FileManager.default.temporaryDirectory
-        .appendingPathComponent(UUID().uuidString + (url.pathExtension.isEmpty ? ".jpg" : "." + url.pathExtension))
-      do {
-        try FileManager.default.moveItem(at: location, to: tmp)
-        completion(try UNNotificationAttachment(identifier: "image", url: tmp))
-      } catch {
-        completion(nil)
-      }
-    }.resume()
+    EngageKaroReceipts.reportDeliveredBlocking(
+      apiBase: apiBase,
+      apiKey: apiKey,
+      externalId: defaults.string(forKey: "engagekaro.externalId"),
+      identityHash: defaults.string(forKey: "engagekaro.identityHash"),
+      messageId: messageId
+    )
   }
 }

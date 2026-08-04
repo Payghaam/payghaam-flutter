@@ -1,5 +1,15 @@
 # EngageKaro Flutter SDK — Design
 
+> **Status: historical.** This is the original scaffolding doc from before push
+> was implemented — it describes Dart as the sole comms layer talking to
+> `/api/sdk/*` over HTTP. That's since changed: this SDK now wraps the
+> canonical native SDKs (strategy B below, plus the comms layer moved native
+> too) for both push and API calls; Dart's `ApiClient` is a fallback used only
+> when there's no native plugin (web/desktop). See `sdk-native-wrapper-design.md`
+> at the repo root for the current architecture. Kept here for the original
+> reasoning on the OneSignal comparison and endpoint mapping, which are still
+> accurate.
+
 Derived from a review of the OneSignal Flutter SDK setup guide. Goal: give a
 Flutter app a small, OneSignal-shaped API to identify users, manage
 subscriptions, set tags, and track events against the EngageKaro platform.

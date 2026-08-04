@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:flutter/widgets.dart';
 
+import 'api_bridge.dart';
 import 'api_client.dart';
 import 'config.dart';
 import 'device_context.dart';
@@ -19,7 +21,11 @@ class EngageKaro with WidgetsBindingObserver {
   static final EngageKaro instance = EngageKaro._();
 
   late EngageKaroConfig _config;
+  // HTTP fallback, used only where there's no native SDK to delegate to
+  // (web/desktop — see api_bridge.dart). On iOS/Android every call below goes
+  // through [_bridge] instead.
   late ApiClient _api;
+  final ApiBridge _bridge = ApiBridge();
   late UserManager _user;
   final Storage _storage = Storage();
   // Defaults to native push (iOS APNs / Android FCM). Pass a different
@@ -86,12 +92,21 @@ class EngageKaro with WidgetsBindingObserver {
     _config = config;
     _api = ApiClient(config);
     _api.queue = OfflineQueue(_api.rawRequest);
-    _user = UserManager(_api, () => _externalId, () => _canSend);
+    _user = UserManager(_bridge, _api, () => _externalId, () => _canSend);
     if (push != null) _push = push;
 
     _externalId = await _storage.getExternalId();
     _consentGiven = config.requireConsent ? await _storage.getConsent() : true;
     _initialized = true;
+
+    // Mirror config/identity into the native bridge (see api_bridge.dart) so
+    // apiIdentify/apiTrack/etc. work on iOS/Android without a separate
+    // "did you call login() yet" state machine there.
+    unawaited(_bridge.sync(
+      apiKey: config.apiKey,
+      baseUrl: config.baseUrl,
+      externalId: _externalId,
+    ));
 
     _wirePushListeners();
     WidgetsBinding.instance.addObserver(this);
@@ -120,7 +135,9 @@ class EngageKaro with WidgetsBindingObserver {
   }
 
   Future<void> _onForeground() async {
-    // Drain anything queued while the device was offline.
+    // Drain anything queued while the device was offline — both the native
+    // bridge's queue and the HTTP-fallback queue may have accumulated items.
+    unawaited(_bridge.flushQueue());
     unawaited(_api.queue?.flush());
     if (!_canSend || _externalId == null) return;
     if (!_sessions.noteForegroundResume()) return;
@@ -147,10 +164,12 @@ class EngageKaro with WidgetsBindingObserver {
         sessionStart: countSession,
         pushPermission: _pushPermission,
       );
-      await _api.identify(
-        externalId: _externalId,
-        deviceContext: ctx.toJson(),
-      );
+      final json = ctx.toJson();
+      try {
+        await _bridge.identify(deviceContext: json);
+      } on MissingPluginException {
+        await _api.identify(externalId: _externalId, deviceContext: json);
+      }
     } catch (e) {
       _reportError(e, 'syncDeviceProfile');
     }
@@ -226,12 +245,16 @@ class EngageKaro with WidgetsBindingObserver {
   }) async {
     if (!_canSend) return;
     try {
-      await _api.reportReceipt(
-        messageId: messageId,
-        event: event,
-        externalId: _externalId,
-        properties: properties,
-      );
+      try {
+        await _bridge.reportReceipt(messageId, event, properties);
+      } on MissingPluginException {
+        await _api.reportReceipt(
+          messageId: messageId,
+          event: event,
+          externalId: _externalId,
+          properties: properties,
+        );
+      }
     } catch (e) {
       _reportError(e, 'reportPushReceipt');
     }
@@ -246,6 +269,12 @@ class EngageKaro with WidgetsBindingObserver {
     _externalId = externalId;
     _api.identityHash = identityHash;
     await _storage.setExternalId(externalId);
+    unawaited(_bridge.sync(
+      apiKey: _config.apiKey,
+      baseUrl: _config.baseUrl,
+      externalId: externalId,
+      identityHash: identityHash,
+    ));
     if (!_canSend) return;
 
     // Network enrichment (push token + single identify with device context) runs in background.
@@ -273,6 +302,7 @@ class EngageKaro with WidgetsBindingObserver {
     _externalId = null;
     _api.identityHash = null;
     await _storage.setExternalId(null);
+    unawaited(_bridge.clearIdentity());
   }
 
   /// Track a custom event (drives journeys + analytics).
@@ -280,8 +310,12 @@ class EngageKaro with WidgetsBindingObserver {
       [Map<String, dynamic>? properties]) async {
     if (!_canSend) return;
     try {
-      await _api.track(
-          name: name, externalId: _externalId, properties: properties);
+      try {
+        await _bridge.track(name, properties);
+      } on MissingPluginException {
+        await _api.track(
+            name: name, externalId: _externalId, properties: properties);
+      }
     } catch (e) {
       _reportError(e, 'trackEvent');
     }
@@ -320,17 +354,29 @@ class EngageKaro with WidgetsBindingObserver {
     }
     try {
       final ctx = await DeviceContext.collect(pushPermission: _pushPermission);
-      await _api.addSubscription(
-        externalId: _externalId!,
-        type: platform ?? _push.subscriptionType,
-        token: token,
-        deviceModel: ctx.deviceModel,
-        deviceOs: ctx.osVersion != null
-            ? '${ctx.os ?? ''} ${ctx.osVersion}'.trim()
-            : ctx.os,
-        appVersion: ctx.appVersion,
-        sdk: ctx.sdkVersion,
-      );
+      final type = platform ?? _push.subscriptionType;
+      final deviceOs = ctx.osVersion != null
+          ? '${ctx.os ?? ''} ${ctx.osVersion}'.trim()
+          : ctx.os;
+      try {
+        await _bridge.addSubscription(
+          type: type.wire,
+          token: token,
+          deviceModel: ctx.deviceModel,
+          deviceOs: deviceOs,
+          appVersion: ctx.appVersion,
+        );
+      } on MissingPluginException {
+        await _api.addSubscription(
+          externalId: _externalId!,
+          type: type,
+          token: token,
+          deviceModel: ctx.deviceModel,
+          deviceOs: deviceOs,
+          appVersion: ctx.appVersion,
+          sdk: ctx.sdkVersion,
+        );
+      }
       _pendingPushToken = null;
     } catch (e) {
       _reportError(e, 'registerPushToken');

@@ -32,17 +32,23 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        // Must match sdks/android's JVM target (17) now that this plugin depends on
+        // it directly — a lower target here can't consume classes compiled for a
+        // higher one.
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
 }
 
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:33.5.1')
-    implementation 'com.google.firebase:firebase-messaging'
+    // Canonical native SDK (sdks/android), wired in via a Gradle composite build
+    // from the consuming app's settings.gradle — see sdk-native-wrapper-design.md.
+    // Brings in firebase-messaging and kotlinx-coroutines-android transitively, so
+    // this plugin no longer declares them directly.
+    implementation "com.engagekaro:engagekaro"
     implementation 'androidx.core:core-ktx:1.13.1'
 }

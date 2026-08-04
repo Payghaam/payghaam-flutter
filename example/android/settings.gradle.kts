@@ -24,3 +24,13 @@ plugins {
 }
 
 include(":app")
+
+// Canonical native SDK — engagekaro_flutter's build.gradle depends on
+// "com.engagekaro:engagekaro"; this composite build substitution resolves that to
+// the local sdks/android module instead of a Maven repo. See
+// sdk-native-wrapper-design.md.
+includeBuild("../../../android") {
+    dependencySubstitution {
+        substitute(module("com.engagekaro:engagekaro")).using(project(":engagekaro"))
+    }
+}

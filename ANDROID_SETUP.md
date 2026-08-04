@@ -31,8 +31,25 @@ buildscript {
 apply plugin: 'com.google.gms.google-services'
 ```
 
-The EngageKaro plugin already pulls in `firebase-messaging`, so you don't add it
-yourself. Make sure your app `minSdkVersion` is ≥ 21.
+The plugin depends on the canonical native Android SDK (`com.engagekaro:engagekaro`
+at `sdks/android`), which pulls in `firebase-messaging` transitively — you don't
+add either yourself. Make sure your app `minSdkVersion` is ≥ 21 and JVM target is
+17 (the native SDK's own target — a lower one won't compile against it).
+
+That native SDK isn't published to Maven yet, so until it is, point your app's
+`android/settings.gradle.kts` at it with a composite build + dependency
+substitution (adjust the relative path to wherever you've checked out this repo):
+
+```kotlin
+includeBuild("../../sdks/android") {
+    dependencySubstitution {
+        substitute(module("com.engagekaro:engagekaro")).using(project(":engagekaro"))
+    }
+}
+```
+
+Once it's published, this block goes away and `com.engagekaro:engagekaro`
+resolves from Maven like any other dependency.
 
 ## 3. Use it (same code as iOS)
 

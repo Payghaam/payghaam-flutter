@@ -1,3 +1,4 @@
+import EngageKaro
 import Flutter
 import UIKit
 import UserNotifications
@@ -75,9 +76,123 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
     case "setSharedConfig":
       if let args = call.arguments as? [String: Any] { saveSharedConfig(args) }
       result(nil)
+
+    // ── Cross-platform API bridge (sdk-native-wrapper-design.md §4.5) ─────────
+    // Proxies a single call through the canonical ApiClient + offline queue,
+    // replacing this plugin's old `package:http`-based ApiClient in Dart.
+    case "apiSync":
+      let args = call.arguments as? [String: Any]
+      if let apiKey = args?["apiKey"] as? String, let baseUrl = args?["baseUrl"] as? String {
+        MainActor.assumeIsolated {
+          EngageKaro.shared.persistBridgeConfig(
+            apiKey: apiKey,
+            baseUrl: baseUrl,
+            externalId: args?["externalId"] as? String,
+            identityHash: args?["identityHash"] as? String
+          )
+        }
+      }
+      result(nil)
+    case "apiClearIdentity":
+      MainActor.assumeIsolated { EngageKaro.shared.clearBridgeIdentity() }
+      result(nil)
+    case "apiIdentify":
+      let ctx = (call.arguments as? [String: Any])?["deviceContext"] as? [String: Any]
+      Task {
+        do {
+          try await EngageKaro.shared.bridgeIdentify(deviceContext: ctx)
+          result(nil)
+        } catch {
+          result(Self.apiError(error))
+        }
+      }
+    case "apiAddSubscription":
+      guard let args = call.arguments as? [String: Any],
+            let typeStr = args["type"] as? String,
+            let type = SubscriptionType(rawValue: typeStr),
+            let token = args["token"] as? String else {
+        result(nil)
+        return
+      }
+      Task {
+        do {
+          try await EngageKaro.shared.bridgeAddSubscription(type: type, token: token)
+          result(nil)
+        } catch {
+          result(Self.apiError(error))
+        }
+      }
+    case "apiUpdateTags":
+      let raw = (call.arguments as? [String: Any])?["tags"] as? [String: Any] ?? [:]
+      Task {
+        do {
+          try await EngageKaro.shared.addTags(Self.nilCoalesced(raw))
+          result(nil)
+        } catch {
+          result(Self.apiError(error))
+        }
+      }
+    case "apiTrack":
+      guard let args = call.arguments as? [String: Any], let name = args["name"] as? String else {
+        result(nil)
+        return
+      }
+      let properties = args["properties"] as? [String: Any]
+      Task {
+        do {
+          try await EngageKaro.shared.trackEvent(name, properties: properties)
+          result(nil)
+        } catch {
+          result(Self.apiError(error))
+        }
+      }
+    case "apiReportReceipt":
+      guard let args = call.arguments as? [String: Any],
+            let messageId = args["messageId"] as? String,
+            let event = args["event"] as? String else {
+        result(nil)
+        return
+      }
+      let properties = args["properties"] as? [String: Any]
+      Task {
+        await EngageKaro.shared.reportPushReceipt(messageId: messageId, event: event, properties: properties)
+        result(nil)
+      }
+    case "apiFlushQueue":
+      Task {
+        await EngageKaro.shared.bridgeFlushQueue()
+        result(nil)
+      }
     default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  /// Converts a Flutter-bridged `[String: Any]` (where a Dart `null` value
+  /// arrives as `NSNull`, not Swift `nil`) into `[String: Any?]` so
+  /// `EngageKaro.addTags` sees real `nil`s for tag removal.
+  private static func nilCoalesced(_ dict: [String: Any]) -> [String: Any?] {
+    var out: [String: Any?] = [:]
+    for (k, v) in dict {
+      if v is NSNull {
+        out[k] = nil
+      } else {
+        out[k] = v
+      }
+    }
+    return out
+  }
+
+  /// `sendOrQueue` inside the canonical SDK already swallows retryable failures
+  /// (parks them in the offline queue), so this only ever surfaces a
+  /// FlutterError for a non-retryable one (e.g. a 4xx) — Dart wraps that back
+  /// into `EngageKaroApiException`. `details` carries the status code so Dart
+  /// doesn't have to parse it out of the message.
+  private static func apiError(_ error: Error) -> FlutterError {
+    if let apiError = error as? EngageKaroApiError {
+      return FlutterError(code: "engagekaro_api_error", message: apiError.errorDescription, details: apiError.statusCode)
+    }
+    return FlutterError(code: "engagekaro_api_error", message: "\(error)", details: nil)
   }
 
   // MARK: - APNs token (forwarded by FlutterAppDelegate)
@@ -141,20 +256,15 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
     return out
   }
 
+  /// Delegates to the canonical SDK (sdks/ios) instead of duplicating the
+  /// locale/UIDevice snapshot — see sdk-native-wrapper-design.md. Note this
+  /// omits `pushPermission`/`sessionStart`; the Dart layer requests those
+  /// separately and merges them before sending, matching its existing
+  /// behavior on Android. `EngageKaro` is @MainActor; assumeIsolated is safe
+  /// because Flutter dispatches method channel calls on the platform (main)
+  /// thread by default, and this plugin doesn't set a custom task queue.
   private static func deviceContext() -> [String: Any] {
-    let locale = Locale.current
-    let tz = TimeZone.current.identifier
-    let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
-    return [
-      "country": locale.regionCode ?? "",
-      "language": locale.languageCode ?? "",
-      "timezone": tz,
-      "os": "iOS",
-      "osVersion": UIDevice.current.systemVersion,
-      "appVersion": appVersion ?? "",
-      "deviceModel": UIDevice.current.model,
-      "sdkVersion": "0.1.0",
-    ]
+    MainActor.assumeIsolated { EngageKaro.deviceContextSnapshot() }
   }
 }
 
