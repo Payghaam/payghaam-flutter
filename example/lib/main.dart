@@ -1,26 +1,26 @@
-import 'package:engagekaro_flutter/engagekaro_flutter.dart';
+import 'package:payghaam_flutter/payghaam_flutter.dart';
 import 'package:flutter/material.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const EngageKaroExampleApp());
+  runApp(const PayghaamExampleApp());
 }
 
-/// Minimal demo app showing EngageKaro SDK initialization, login, and events.
-class EngageKaroExampleApp extends StatefulWidget {
-  const EngageKaroExampleApp({super.key});
+/// Minimal demo app showing Payghaam SDK initialization, login, and events.
+class PayghaamExampleApp extends StatefulWidget {
+  const PayghaamExampleApp({super.key});
 
   @override
-  State<EngageKaroExampleApp> createState() => _EngageKaroExampleAppState();
+  State<PayghaamExampleApp> createState() => _PayghaamExampleAppState();
 }
 
-class _EngageKaroExampleAppState extends State<EngageKaroExampleApp> {
+class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
   bool _initialized = false;
   String _status = 'Tap Initialize to start';
 
   Future<void> _initialize() async {
-    await EngageKaro.instance.initialize(
-      const EngageKaroConfig(
+    await Payghaam.instance.initialize(
+      const PayghaamConfig(
         appId: 'YOUR_PROJECT_ID',
         apiKey: 'ek_client_...',
         baseUrl: 'https://api.yourhost.com',
@@ -34,12 +34,12 @@ class _EngageKaroExampleAppState extends State<EngageKaroExampleApp> {
   }
 
   Future<void> _login() async {
-    await EngageKaro.instance.login('example-user');
+    await Payghaam.instance.login('example-user');
     setState(() => _status = 'Logged in as example-user');
   }
 
   Future<void> _trackEvent() async {
-    await EngageKaro.instance.trackEvent('example_tap', {
+    await Payghaam.instance.trackEvent('example_tap', {
       'source': 'example_app',
     });
     setState(() => _status = 'Tracked example_tap event');
@@ -49,7 +49,7 @@ class _EngageKaroExampleAppState extends State<EngageKaroExampleApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('EngageKaro Example')),
+        appBar: AppBar(title: const Text('Payghaam Example')),
         body: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(

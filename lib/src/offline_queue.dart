@@ -10,7 +10,7 @@ import 'api_client.dart';
 /// timeout, 5xx) are parked in shared_preferences and drained FIFO on the next
 /// app-resume / successful send — offline activity is no longer lost.
 class OfflineQueue {
-  static const _key = 'engagekaro.queue.v1';
+  static const _key = 'payghaam.queue.v1';
   static const _maxQueue = 200;
   static const _maxAge = Duration(days: 7);
 
@@ -21,7 +21,7 @@ class OfflineQueue {
 
   /// 4xx (except 408/429) will never be accepted; everything else retries.
   static bool isRetryable(Object error) {
-    if (error is EngageKaroApiException) {
+    if (error is PayghaamApiException) {
       return error.statusCode == 408 ||
           error.statusCode == 429 ||
           error.statusCode >= 500;

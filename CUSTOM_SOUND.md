@@ -1,6 +1,6 @@
 # Custom notification sounds
 
-EngageKaro lets you attach a **custom sound** to a push notification. Set it in
+Payghaam lets you attach a **custom sound** to a push notification. Set it in
 the dashboard (campaign composer or a journey **Send push** node → *Custom
 sound*), or send it via the API.
 
@@ -12,11 +12,11 @@ fields** — fill in whichever platforms you target:
 | `soundIos` | iOS (APNs) | filename **with** extension | `chime.caf` |
 | `soundAndroid` | Android (FCM) | `res/raw` resource name, **no** extension | `chime` |
 
-> **EngageKaro only carries the sound _name_.** The actual audio file has to ship
+> **Payghaam only carries the sound _name_.** The actual audio file has to ship
 > inside your app — it can't be streamed from a URL. iOS and Android both require
 > the file to be bundled/registered ahead of time. This page covers that setup.
 
-What EngageKaro puts on the wire:
+What Payghaam puts on the wire:
 
 - **iOS (APNs):** `aps.sound` = `soundIos`.
 - **Android (FCM):** `ek_sound` = `soundAndroid`, in the data payload. Android
@@ -43,7 +43,7 @@ platform uses the system default sound.
    - Must be **30 seconds or shorter**, or iOS silently falls back to the
      default sound.
 
-2. **Enter the filename _with extension_** in the EngageKaro **iOS sound** field,
+2. **Enter the filename _with extension_** in the Payghaam **iOS sound** field,
    e.g. `chime.caf`. This is the value APNs matches against the bundled file.
 
 That's it — the OS plays the sound from `aps.sound` automatically. No extension
@@ -62,12 +62,12 @@ means routing the message to a channel that already has that sound.
 1. **Add the sound file to `res/raw`.** Place it at
    `android/app/src/main/res/raw/chime.mp3` (or `.ogg` / `.wav`). The resource
    name is the filename **without** extension (`chime`) and must be lowercase
-   with no spaces. Enter that name (`chime`) in the EngageKaro **Android sound**
+   with no spaces. Enter that name (`chime`) in the Payghaam **Android sound**
    field.
 
-2. **That's it — the SDK handles the channel.** `EngagekaroFirebaseMessagingService`
+2. **That's it — the SDK handles the channel.** `PayghaamFirebaseMessagingService`
    reads `ek_sound`, resolves it against `res/raw`, and posts to a channel
-   dedicated to that sound (`engagekaro_default_sound_chime`), creating it on
+   dedicated to that sound (`payghaam_default_sound_chime`), creating it on
    first use. On **Android 7 and below**, where channels don't exist, it calls
    `builder.setSound(uri)` directly.
 

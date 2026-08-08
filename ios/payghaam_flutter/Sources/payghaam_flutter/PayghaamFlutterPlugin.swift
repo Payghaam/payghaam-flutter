@@ -1,9 +1,9 @@
-import EngageKaro
+import Payghaam
 import Flutter
 import UIKit
 import UserNotifications
 
-/// Native iOS plugin for the EngageKaro Flutter SDK.
+/// Native iOS plugin for the Payghaam Flutter SDK.
 ///
 /// Responsibilities:
 ///  - Register for remote notifications and surface the raw APNs device token
@@ -13,7 +13,7 @@ import UserNotifications
 ///  - Capture the cold-start notification (tapped from terminated state).
 ///  - Persist API config to an App Group so the Notification Service Extension
 ///    can report `delivered` receipts even when the app is killed.
-public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate {
+public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate {
   private let tokenHandler = StreamSinkHandler()
   private let openedHandler = StreamSinkHandler()
   private let foregroundHandler = StreamSinkHandler()
@@ -22,16 +22,16 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
   private var initialNotification: [String: Any]?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let instance = EngagekaroFlutterPlugin()
+    let instance = PayghaamFlutterPlugin()
 
-    let methods = FlutterMethodChannel(name: "engagekaro/methods", binaryMessenger: registrar.messenger())
+    let methods = FlutterMethodChannel(name: "payghaam/methods", binaryMessenger: registrar.messenger())
     registrar.addMethodCallDelegate(instance, channel: methods)
 
-    FlutterEventChannel(name: "engagekaro/onToken", binaryMessenger: registrar.messenger())
+    FlutterEventChannel(name: "payghaam/onToken", binaryMessenger: registrar.messenger())
       .setStreamHandler(instance.tokenHandler)
-    FlutterEventChannel(name: "engagekaro/onOpened", binaryMessenger: registrar.messenger())
+    FlutterEventChannel(name: "payghaam/onOpened", binaryMessenger: registrar.messenger())
       .setStreamHandler(instance.openedHandler)
-    FlutterEventChannel(name: "engagekaro/onForeground", binaryMessenger: registrar.messenger())
+    FlutterEventChannel(name: "payghaam/onForeground", binaryMessenger: registrar.messenger())
       .setStreamHandler(instance.foregroundHandler)
 
     registrar.addApplicationDelegate(instance)
@@ -84,7 +84,7 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
       let args = call.arguments as? [String: Any]
       if let apiKey = args?["apiKey"] as? String, let baseUrl = args?["baseUrl"] as? String {
         MainActor.assumeIsolated {
-          EngageKaro.shared.persistBridgeConfig(
+          Payghaam.shared.persistBridgeConfig(
             apiKey: apiKey,
             baseUrl: baseUrl,
             externalId: args?["externalId"] as? String,
@@ -94,13 +94,13 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
       }
       result(nil)
     case "apiClearIdentity":
-      MainActor.assumeIsolated { EngageKaro.shared.clearBridgeIdentity() }
+      MainActor.assumeIsolated { Payghaam.shared.clearBridgeIdentity() }
       result(nil)
     case "apiIdentify":
       let ctx = (call.arguments as? [String: Any])?["deviceContext"] as? [String: Any]
       Task {
         do {
-          try await EngageKaro.shared.bridgeIdentify(deviceContext: ctx)
+          try await Payghaam.shared.bridgeIdentify(deviceContext: ctx)
           result(nil)
         } catch {
           result(Self.apiError(error))
@@ -116,7 +116,7 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
       }
       Task {
         do {
-          try await EngageKaro.shared.bridgeAddSubscription(type: type, token: token)
+          try await Payghaam.shared.bridgeAddSubscription(type: type, token: token)
           result(nil)
         } catch {
           result(Self.apiError(error))
@@ -126,7 +126,7 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
       let raw = (call.arguments as? [String: Any])?["tags"] as? [String: Any] ?? [:]
       Task {
         do {
-          try await EngageKaro.shared.addTags(Self.nilCoalesced(raw))
+          try await Payghaam.shared.addTags(Self.nilCoalesced(raw))
           result(nil)
         } catch {
           result(Self.apiError(error))
@@ -140,7 +140,7 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
       let properties = args["properties"] as? [String: Any]
       Task {
         do {
-          try await EngageKaro.shared.trackEvent(name, properties: properties)
+          try await Payghaam.shared.trackEvent(name, properties: properties)
           result(nil)
         } catch {
           result(Self.apiError(error))
@@ -155,12 +155,12 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
       }
       let properties = args["properties"] as? [String: Any]
       Task {
-        await EngageKaro.shared.reportPushReceipt(messageId: messageId, event: event, properties: properties)
+        await Payghaam.shared.reportPushReceipt(messageId: messageId, event: event, properties: properties)
         result(nil)
       }
     case "apiFlushQueue":
       Task {
-        await EngageKaro.shared.bridgeFlushQueue()
+        await Payghaam.shared.bridgeFlushQueue()
         result(nil)
       }
     default:
@@ -170,7 +170,7 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
 
   /// Converts a Flutter-bridged `[String: Any]` (where a Dart `null` value
   /// arrives as `NSNull`, not Swift `nil`) into `[String: Any?]` so
-  /// `EngageKaro.addTags` sees real `nil`s for tag removal.
+  /// `Payghaam.addTags` sees real `nil`s for tag removal.
   private static func nilCoalesced(_ dict: [String: Any]) -> [String: Any?] {
     var out: [String: Any?] = [:]
     for (k, v) in dict {
@@ -186,13 +186,13 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
   /// `sendOrQueue` inside the canonical SDK already swallows retryable failures
   /// (parks them in the offline queue), so this only ever surfaces a
   /// FlutterError for a non-retryable one (e.g. a 4xx) — Dart wraps that back
-  /// into `EngageKaroApiException`. `details` carries the status code so Dart
+  /// into `PayghaamApiException`. `details` carries the status code so Dart
   /// doesn't have to parse it out of the message.
   private static func apiError(_ error: Error) -> FlutterError {
-    if let apiError = error as? EngageKaroApiError {
-      return FlutterError(code: "engagekaro_api_error", message: apiError.errorDescription, details: apiError.statusCode)
+    if let apiError = error as? PayghaamApiError {
+      return FlutterError(code: "payghaam_api_error", message: apiError.errorDescription, details: apiError.statusCode)
     }
-    return FlutterError(code: "engagekaro_api_error", message: "\(error)", details: nil)
+    return FlutterError(code: "payghaam_api_error", message: "\(error)", details: nil)
   }
 
   // MARK: - APNs token (forwarded by FlutterAppDelegate)
@@ -241,10 +241,10 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
   private func saveSharedConfig(_ args: [String: Any]) {
     guard let appGroup = args["appGroup"] as? String else { return }
     let defaults = UserDefaults(suiteName: appGroup)
-    defaults?.set(args["apiBase"] as? String, forKey: "engagekaro.apiBase")
-    defaults?.set(args["apiKey"] as? String, forKey: "engagekaro.apiKey")
-    defaults?.set(args["externalId"] as? String, forKey: "engagekaro.externalId")
-    defaults?.set(args["identityHash"] as? String, forKey: "engagekaro.identityHash")
+    defaults?.set(args["apiBase"] as? String, forKey: "payghaam.apiBase")
+    defaults?.set(args["apiKey"] as? String, forKey: "payghaam.apiKey")
+    defaults?.set(args["externalId"] as? String, forKey: "payghaam.externalId")
+    defaults?.set(args["identityHash"] as? String, forKey: "payghaam.identityHash")
   }
 
   /// Convert APNs userInfo into a Flutter-codec-safe `[String: Any]`.
@@ -260,11 +260,11 @@ public class EngagekaroFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificatio
   /// locale/UIDevice snapshot — see sdk-native-wrapper-design.md. Note this
   /// omits `pushPermission`/`sessionStart`; the Dart layer requests those
   /// separately and merges them before sending, matching its existing
-  /// behavior on Android. `EngageKaro` is @MainActor; assumeIsolated is safe
+  /// behavior on Android. `Payghaam` is @MainActor; assumeIsolated is safe
   /// because Flutter dispatches method channel calls on the platform (main)
   /// thread by default, and this plugin doesn't set a custom task queue.
   private static func deviceContext() -> [String: Any] {
-    MainActor.assumeIsolated { EngageKaro.deviceContextSnapshot() }
+    MainActor.assumeIsolated { Payghaam.deviceContextSnapshot() }
   }
 }
 

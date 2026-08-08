@@ -1,6 +1,6 @@
 # iOS setup (direct APNs, no Firebase)
 
-The EngageKaro Flutter SDK ships native iOS code that registers for APNs, gets
+The Payghaam Flutter SDK ships native iOS code that registers for APNs, gets
 the device token, and handles notification taps/foreground. A Notification
 Service Extension (NSE) adds terminated-state **confirmed delivery** and rich
 images. Android push is handled separately via `firebase_messaging` + a
@@ -12,36 +12,36 @@ In Xcode → your app target → **Signing & Capabilities**, add:
 
 - **Push Notifications**
 - **Background Modes** → enable **Remote notifications**
-- **App Groups** → add a group id, e.g. `group.com.yourcompany.app.engagekaro`
+- **App Groups** → add a group id, e.g. `group.com.yourcompany.app.payghaam`
 
 ## 2. Tell the app + extension the App Group
 
 Add this key to the **app target's** `Info.plist` (and the NSE's later):
 
 ```xml
-<key>EngageKaroAppGroup</key>
-<string>group.com.yourcompany.app.engagekaro</string>
+<key>PayghaamAppGroup</key>
+<string>group.com.yourcompany.app.payghaam</string>
 ```
 
 ## 3. Use the provider in Dart (same code on iOS and Android)
 
 ```dart
-import 'package:engagekaro_flutter/engagekaro_flutter.dart';
+import 'package:payghaam_flutter/payghaam_flutter.dart';
 
-final config = EngageKaroConfig(
+final config = PayghaamConfig(
   appId: 'YOUR_PROJECT_ID',
   apiKey: 'ek_client_...',
   baseUrl: 'https://api.yourhost.com',
 );
 
-final push = EngageKaroPushProvider();
-await EngageKaro.instance.initialize(config, push: push);
-await EngageKaro.instance.login('your-user-id');
-await EngageKaro.instance.requestPushPermission();
+final push = PayghaamPushProvider();
+await Payghaam.instance.initialize(config, push: push);
+await Payghaam.instance.login('your-user-id');
+await Payghaam.instance.requestPushPermission();
 
 // Share config with the NSE so it can report delivery while terminated.
 await push.shareConfig(
-  appGroup: 'group.com.yourcompany.app.engagekaro', // iOS only; Android ignores it
+  appGroup: 'group.com.yourcompany.app.payghaam', // iOS only; Android ignores it
   apiBase: config.baseUrl,
   apiKey: config.apiKey,
   externalId: 'your-user-id',
@@ -51,17 +51,17 @@ await push.shareConfig(
 ## 4. Add the Notification Service Extension
 
 1. Xcode → **File ▸ New ▸ Target… ▸ Notification Service Extension**. Name it
-   e.g. `EngageKaroNSE`. Don't activate the scheme.
+   e.g. `PayghaamNSE`. Don't activate the scheme.
 2. Replace the generated `NotificationService.swift` with
    [`ios_extension/NotificationService.swift`](./ios_extension/NotificationService.swift).
-   It calls into the canonical `EngageKaro` package (`import EngageKaro`), so
+   It calls into the canonical `Payghaam` package (`import Payghaam`), so
    add that as a dependency of the **new NSE target** — Xcode → NSE target →
    **General → Frameworks and Libraries → +** (if using CocoaPods, add a
-   `target 'EngageKaroNSE' do pod 'EngageKaro', :path => '...' end` block to
+   `target 'PayghaamNSE' do pod 'Payghaam', :path => '...' end` block to
    your Podfile and re-run `pod install` instead).
 3. NSE target → **Signing & Capabilities** → add **App Groups** → the **same**
    group id as the app.
-4. NSE target → `Info.plist` → add the same `EngageKaroAppGroup` key/value.
+4. NSE target → `Info.plist` → add the same `PayghaamAppGroup` key/value.
 5. Set the NSE **Minimum Deployment Target** to match the app (iOS 15+ rec.).
 
 ## How delivery is confirmed in each app state
@@ -72,7 +72,7 @@ await push.shareConfig(
 | Background tap / cold-start tap | plugin `didReceive` / `getInitialNotification` | `opened` |
 | Terminated (no tap) | **NSE** posts to `/api/sdk/receipts` | `delivered` |
 
-All sends from EngageKaro stamp `ek_message_id` (and `ek_image` for rich push),
+All sends from Payghaam stamp `ek_message_id` (and `ek_image` for rich push),
 which the SDK and NSE read to attribute the receipt.
 
 ## Notes
@@ -80,5 +80,5 @@ which the SDK and NSE read to attribute the receipt.
 - The plugin sets itself as the `UNUserNotificationCenter` delegate. If you also
   use a library that claims the delegate (e.g. `flutter_local_notifications`),
   you'll need to coordinate — on the recommended iOS-native path you don't.
-- APNs `.p8`/Key ID/Team ID/Bundle ID are configured in the EngageKaro dashboard
+- APNs `.p8`/Key ID/Team ID/Bundle ID are configured in the Payghaam dashboard
   (Project → Channels → iOS · APNs); the device never sees them.

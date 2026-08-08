@@ -13,7 +13,7 @@ import PackageDescription
 // loaded via Flutter's plugin symlink). Resolving #filePath's real path first
 // makes the hop count to sdks/ios stable regardless of which app the symlink
 // puts us under.
-let engageKaroPath = URL(fileURLWithPath: #filePath)
+let payghaamPath = URL(fileURLWithPath: #filePath)
     .resolvingSymlinksInPath()
     .deletingLastPathComponent()
     .appendingPathComponent("../../../ios")
@@ -21,30 +21,30 @@ let engageKaroPath = URL(fileURLWithPath: #filePath)
     .path
 
 let package = Package(
-    name: "engagekaro_flutter",
+    name: "payghaam_flutter",
     platforms: [
-        // Must match EngageKaro's minimum (Package.swift: .iOS(.v15)) — SPM
+        // Must match Payghaam's minimum (Package.swift: .iOS(.v15)) — SPM
         // enforces this transitively as a hard build error, unlike CocoaPods
         // which only warns on a mismatched s.platform.
         .iOS("15.0"),
     ],
     products: [
-        .library(name: "engagekaro-flutter", targets: ["engagekaro_flutter"]),
+        .library(name: "payghaam-flutter", targets: ["payghaam_flutter"]),
     ],
     dependencies: [
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
         // Canonical native SDK — see sdk-native-wrapper-design.md. Only
         // exercised by SPM-based consumers; the CocoaPods path (the tested
-        // one, via engagekaro_flutter.podspec) resolves the equivalent
-        // 'EngageKaro' pod via the app's Podfile instead.
-        .package(name: "EngageKaro", path: engageKaroPath),
+        // one, via payghaam_flutter.podspec) resolves the equivalent
+        // 'Payghaam' pod via the app's Podfile instead.
+        .package(name: "Payghaam", path: payghaamPath),
     ],
     targets: [
         .target(
-            name: "engagekaro_flutter",
+            name: "payghaam_flutter",
             dependencies: [
                 .product(name: "FlutterFramework", package: "FlutterFramework"),
-                .product(name: "EngageKaro", package: "EngageKaro"),
+                .product(name: "Payghaam", package: "Payghaam"),
             ]
         ),
     ]

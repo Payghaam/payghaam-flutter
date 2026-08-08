@@ -1,21 +1,21 @@
-// EngageKaro Notification Service Extension
+// Payghaam Notification Service Extension
 //
 // Copy this file into your `OneSignalNotificationServiceExtension`-style NSE
-// target (see IOS_SETUP.md). It reports a `delivered` receipt to EngageKaro even
+// target (see IOS_SETUP.md). It reports a `delivered` receipt to Payghaam even
 // when the app is terminated, and (optionally) attaches a rich image.
 //
 // Requirements:
 //  - The NSE target and the app target share an App Group.
-//  - Both targets have an Info.plist string key `EngageKaroAppGroup` set to that
-//    App Group id (e.g. `group.com.yourcompany.app.engagekaro`).
+//  - Both targets have an Info.plist string key `PayghaamAppGroup` set to that
+//    App Group id (e.g. `group.com.yourcompany.app.payghaam`).
 //  - The main app calls `ApnsPushProvider.shareConfigForExtension(...)` after
 //    login so apiBase/apiKey/externalId are available here.
-//  - The NSE target depends on the canonical `EngageKaro` pod/package
-//    (sdks/ios) — add `target 'YourNSETarget' do pod 'EngageKaro', :path =>
-//    '...' end` to your Podfile, or add the EngageKaro Swift package as a
+//  - The NSE target depends on the canonical `Payghaam` pod/package
+//    (sdks/ios) — add `target 'YourNSETarget' do pod 'Payghaam', :path =>
+//    '...' end` to your Podfile, or add the Payghaam Swift package as a
 //    dependency of the target in Xcode. See sdk-native-wrapper-design.md.
 
-import EngageKaro
+import Payghaam
 import UserNotifications
 
 class NotificationService: UNNotificationServiceExtension {
@@ -38,7 +38,7 @@ class NotificationService: UNNotificationServiceExtension {
     if let urlString = userInfo["ek_image"] as? String,
        let url = URL(string: urlString),
        let best = bestAttempt {
-      EngageKaroReceipts.downloadAttachment(url: url) { attachment in
+      PayghaamReceipts.downloadAttachment(url: url) { attachment in
         if let a = attachment { best.attachments = [a] }
         contentHandler(best)
       }
@@ -57,23 +57,23 @@ class NotificationService: UNNotificationServiceExtension {
   // MARK: - Receipt
 
   private func reportDelivered(messageId: String) {
-    // Flutter's `engagekaro.*` App Group key scheme — see
-    // engagekaro_flutter's saveSharedConfig, which writes these dotted keys
+    // Flutter's `payghaam.*` App Group key scheme — see
+    // payghaam_flutter's saveSharedConfig, which writes these dotted keys
     // (distinct from the canonical SDK's own `ek_*` scheme used by native and
     // React Native apps; left as-is to avoid breaking already-integrated apps'
     // NSE templates — see sdk-native-wrapper-design.md).
     guard
-      let appGroup = Bundle.main.object(forInfoDictionaryKey: "EngageKaroAppGroup") as? String,
+      let appGroup = Bundle.main.object(forInfoDictionaryKey: "PayghaamAppGroup") as? String,
       let defaults = UserDefaults(suiteName: appGroup),
-      let apiBase = defaults.string(forKey: "engagekaro.apiBase"),
-      let apiKey = defaults.string(forKey: "engagekaro.apiKey")
+      let apiBase = defaults.string(forKey: "payghaam.apiBase"),
+      let apiKey = defaults.string(forKey: "payghaam.apiKey")
     else { return }
 
-    EngageKaroReceipts.reportDeliveredBlocking(
+    PayghaamReceipts.reportDeliveredBlocking(
       apiBase: apiBase,
       apiKey: apiKey,
-      externalId: defaults.string(forKey: "engagekaro.externalId"),
-      identityHash: defaults.string(forKey: "engagekaro.identityHash"),
+      externalId: defaults.string(forKey: "payghaam.externalId"),
+      identityHash: defaults.string(forKey: "payghaam.identityHash"),
       messageId: messageId
     )
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 
 /// Shared method-channel handler for platforms without native push (web, desktop).
-Future<dynamic> handleEngagekaroMethod(MethodCall call) async {
+Future<dynamic> handlePayghaamMethod(MethodCall call) async {
   switch (call.method) {
     case 'requestPermission':
       return false;

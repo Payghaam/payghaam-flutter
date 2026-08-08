@@ -30,10 +30,10 @@ flutter_ios_podfile_setup
 target 'Runner' do
   use_frameworks!
 
-  # Canonical native SDK — engagekaro_flutter's podspec depends on 'EngageKaro'
+  # Canonical native SDK — payghaam_flutter's podspec depends on 'Payghaam'
   # by name; this local :path entry is what resolves it (no private Specs repo
   # in this monorepo). See sdk-native-wrapper-design.md.
-  pod 'EngageKaro', :path => '../../../ios'
+  pod 'Payghaam', :path => '../../../ios'
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do

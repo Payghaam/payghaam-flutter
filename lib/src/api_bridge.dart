@@ -16,7 +16,7 @@ import 'api_client.dart';
 /// native-wrapper refactor — everywhere a native SDK exists, this bridge is
 /// the only path.
 class ApiBridge {
-  static const MethodChannel _methods = MethodChannel('engagekaro/methods');
+  static const MethodChannel _methods = MethodChannel('payghaam/methods');
 
   /// Mirror native's `config`/`externalId`/`identityHash` state. Call once in
   /// `initialize()` (externalId omitted) and again in `login()` (externalId
@@ -87,16 +87,16 @@ class ApiBridge {
   Future<void> flushQueue() => _invoke('apiFlushQueue', null);
 
   /// Rethrows [MissingPluginException] (the "no native SDK here, fall back"
-  /// signal) as-is; converts the native SDK's `engagekaro_api_error` into an
-  /// [EngageKaroApiException] so callers can handle both bridge and HTTP paths
+  /// signal) as-is; converts the native SDK's `payghaam_api_error` into an
+  /// [PayghaamApiException] so callers can handle both bridge and HTTP paths
   /// identically. `details` carries the status code the native side attached.
   Future<void> _invoke(String method, Map<String, dynamic>? args) async {
     try {
       await _methods.invokeMethod<void>(method, args);
     } on PlatformException catch (e) {
-      if (e.code == 'engagekaro_api_error') {
+      if (e.code == 'payghaam_api_error') {
         final statusCode = e.details is int ? e.details as int : 0;
-        throw EngageKaroApiException(statusCode, e.message ?? '');
+        throw PayghaamApiException(statusCode, e.message ?? '');
       }
       rethrow;
     }

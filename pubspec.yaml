@@ -1,5 +1,5 @@
-name: engagekaro_flutter
-description: EngageKaro Flutter SDK — identify users, manage subscriptions, set tags, and track events with the EngageKaro engagement platform.
+name: payghaam_flutter
+description: Payghaam Flutter SDK — identify users, manage subscriptions, set tags, and track events with the Payghaam engagement platform.
 version: 0.1.0
 homepage: https://github.com/msamoeed/engagekaro
 repository: https://github.com/msamoeed/engagekaro
@@ -29,19 +29,19 @@ flutter:
       # the firebase-messaging Android library directly — the host app does NOT
       # need the firebase_messaging Flutter plugin). One package, no platform branch.
       ios:
-        pluginClass: EngagekaroFlutterPlugin
+        pluginClass: PayghaamFlutterPlugin
       android:
-        package: com.engagekaro.engagekaro_flutter
-        pluginClass: EngagekaroFlutterPlugin
+        package: com.payghaam.payghaam_flutter
+        pluginClass: PayghaamFlutterPlugin
       web:
-        pluginClass: EngagekaroFlutterPlugin
-        fileName: engagekaro_flutter_web.dart
+        pluginClass: PayghaamFlutterPlugin
+        fileName: payghaam_flutter_web.dart
       linux:
-        dartPluginClass: EngagekaroFlutterPlugin
-        fileName: engagekaro_flutter_stub.dart
+        dartPluginClass: PayghaamFlutterPlugin
+        fileName: payghaam_flutter_stub.dart
       macos:
-        dartPluginClass: EngagekaroFlutterPlugin
-        fileName: engagekaro_flutter_stub.dart
+        dartPluginClass: PayghaamFlutterPlugin
+        fileName: payghaam_flutter_stub.dart
       windows:
-        dartPluginClass: EngagekaroFlutterPlugin
-        fileName: engagekaro_flutter_stub.dart
+        dartPluginClass: PayghaamFlutterPlugin
+        fileName: payghaam_flutter_stub.dart

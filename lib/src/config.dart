@@ -1,15 +1,15 @@
-/// Configuration passed to [EngageKaro.initialize].
-class EngageKaroConfig {
-  /// EngageKaro project id (your app's id on the platform).
+/// Configuration passed to [Payghaam.initialize].
+class PayghaamConfig {
+  /// Payghaam project id (your app's id on the platform).
   final String appId;
 
   /// SDK-type API key created in the dashboard (client-scoped, NOT the REST key).
   final String apiKey;
 
-  /// Base URL of your EngageKaro API, e.g. `https://api.yourhost.com`.
+  /// Base URL of your Payghaam API, e.g. `https://api.yourhost.com`.
   final String baseUrl;
 
-  /// When true, no network calls are made until [EngageKaro.setConsentGiven]
+  /// When true, no network calls are made until [Payghaam.setConsentGiven]
   /// is called with `true`.
   final bool requireConsent;
 
@@ -22,7 +22,7 @@ class EngageKaroConfig {
   /// Optional hook for background failures (identify, push registration, etc.).
   final void Function(Object error, String context)? onError;
 
-  const EngageKaroConfig({
+  const PayghaamConfig({
     required this.appId,
     required this.apiKey,
     required this.baseUrl,

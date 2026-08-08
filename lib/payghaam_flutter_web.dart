@@ -3,13 +3,13 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 import 'src/method_handler.dart';
 
-/// Web stub for the EngageKaro plugin. Push is not supported on web.
-class EngagekaroFlutterPlugin {
+/// Web stub for the Payghaam plugin. Push is not supported on web.
+class PayghaamFlutterPlugin {
   static void registerWith(Registrar registrar) {
     MethodChannel(
-      'engagekaro/methods',
+      'payghaam/methods',
       const StandardMethodCodec(),
       registrar,
-    ).setMethodCallHandler(handleEngagekaroMethod);
+    ).setMethodCallHandler(handlePayghaamMethod);
   }
 }

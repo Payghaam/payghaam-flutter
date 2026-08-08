@@ -5,13 +5,13 @@ import 'package:http/http.dart' as http;
 import 'config.dart';
 import 'offline_queue.dart';
 
-/// Thin REST client over the EngageKaro `/api/sdk/*` endpoints.
+/// Thin REST client over the Payghaam `/api/sdk/*` endpoints.
 /// Every call is authenticated with the project's SDK key.
 class ApiClient {
-  final EngageKaroConfig config;
+  final PayghaamConfig config;
   final http.Client _http;
 
-  /// HMAC-SHA256(externalId) for Identity Verification. Set via [EngageKaro.login]
+  /// HMAC-SHA256(externalId) for Identity Verification. Set via [Payghaam.login]
   /// when the project requires it; sent on every call as a header.
   String? identityHash;
 
@@ -22,12 +22,12 @@ class ApiClient {
         'content-type': 'application/json',
         'authorization': 'Bearer ${config.apiKey}',
         'x-api-key': config.apiKey,
-        if (identityHash != null) 'x-engagekaro-identity-hash': identityHash!,
+        if (identityHash != null) 'x-payghaam-identity-hash': identityHash!,
       };
 
   Uri _uri(String path) => Uri.parse('${config.apiRoot}$path');
 
-  /// Installed by EngageKaro on init; parks retryable failures offline.
+  /// Installed by Payghaam on init; parks retryable failures offline.
   OfflineQueue? queue;
 
   // Fire-and-forget path: send now, or park in the offline queue on a
@@ -76,7 +76,7 @@ class ApiClient {
           ? decoded
           : <String, dynamic>{'data': decoded};
     }
-    throw EngageKaroApiException(res.statusCode, res.body);
+    throw PayghaamApiException(res.statusCode, res.body);
   }
 
   /// Create/identify a user. Returns the subscriber payload.
@@ -157,11 +157,11 @@ class ApiClient {
   void close() => _http.close();
 }
 
-class EngageKaroApiException implements Exception {
+class PayghaamApiException implements Exception {
   final int statusCode;
   final String body;
-  EngageKaroApiException(this.statusCode, this.body);
+  PayghaamApiException(this.statusCode, this.body);
 
   @override
-  String toString() => 'EngageKaroApiException($statusCode): $body';
+  String toString() => 'PayghaamApiException($statusCode): $body';
 }

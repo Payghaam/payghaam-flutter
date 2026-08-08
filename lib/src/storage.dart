@@ -3,9 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Lightweight persistence for the current External ID and an anonymous device
 /// id (used before the user logs in). Backed by shared_preferences.
 class Storage {
-  static const _kExternalId = 'engagekaro.externalId';
-  static const _kDeviceId = 'engagekaro.deviceId';
-  static const _kConsent = 'engagekaro.consentGiven';
+  static const _kExternalId = 'payghaam.externalId';
+  static const _kDeviceId = 'payghaam.deviceId';
+  static const _kConsent = 'payghaam.consentGiven';
 
   SharedPreferences? _prefs;
 

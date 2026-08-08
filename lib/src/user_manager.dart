@@ -5,7 +5,7 @@ import 'api_client.dart';
 import 'config.dart';
 
 /// User-scoped operations: tags and additional channel subscriptions.
-/// Obtained via `EngageKaro.instance.user`.
+/// Obtained via `Payghaam.instance.user`.
 class UserManager {
   final ApiBridge _bridge;
   // HTTP fallback, used only where there's no native SDK to delegate to
@@ -20,7 +20,7 @@ class UserManager {
     final id = _externalId();
     if (id == null) {
       throw StateError(
-          'Call EngageKaro.login(externalId) before setting user data.');
+          'Call Payghaam.login(externalId) before setting user data.');
     }
     return id;
   }

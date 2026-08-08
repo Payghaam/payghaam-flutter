@@ -13,14 +13,14 @@ import 'offline_queue.dart';
 import 'storage.dart';
 import 'user_manager.dart';
 
-/// Entry point for the EngageKaro Flutter SDK.
-class EngageKaro with WidgetsBindingObserver {
-  EngageKaro._();
+/// Entry point for the Payghaam Flutter SDK.
+class Payghaam with WidgetsBindingObserver {
+  Payghaam._();
 
   /// Singleton SDK instance. Call [initialize] once at app startup.
-  static final EngageKaro instance = EngageKaro._();
+  static final Payghaam instance = Payghaam._();
 
-  late EngageKaroConfig _config;
+  late PayghaamConfig _config;
   // HTTP fallback, used only where there's no native SDK to delegate to
   // (web/desktop — see api_bridge.dart). On iOS/Android every call below goes
   // through [_bridge] instead.
@@ -31,7 +31,7 @@ class EngageKaro with WidgetsBindingObserver {
   // Defaults to native push (iOS APNs / Android FCM). Pass a different
   // PushProvider to initialize() to override (e.g. NoopPushProvider for
   // comms-only usage with no push).
-  PushProvider _push = EngageKaroPushProvider();
+  PushProvider _push = PayghaamPushProvider();
 
   bool _initialized = false;
   bool _consentGiven = false;
@@ -58,10 +58,10 @@ class EngageKaro with WidgetsBindingObserver {
   UserManager get user => _user;
 
   /// Emits the full push payload whenever the user taps a notification — your
-  /// custom `data` keys plus EngageKaro's own `ek_*` keys.
+  /// custom `data` keys plus Payghaam's own `ek_*` keys.
   ///
   /// ```dart
-  /// EngageKaro.instance.onNotificationOpened.listen((payload) {
+  /// Payghaam.instance.onNotificationOpened.listen((payload) {
   ///   final target = payload['targetId'];
   ///   if (target is String) navigator.pushNamed('/offers/$target');
   /// });
@@ -81,14 +81,14 @@ class EngageKaro with WidgetsBindingObserver {
   void _reportError(Object error, String context) {
     if (_config.debug) {
       // ignore: avoid_print
-      print('[EngageKaro] $context: $error');
+      print('[Payghaam] $context: $error');
     }
     _config.onError?.call(error, context);
   }
 
   /// Initialize the SDK. Optionally pass a [PushProvider] (e.g. a
   /// firebase_messaging-backed implementation) to enable push registration.
-  Future<void> initialize(EngageKaroConfig config, {PushProvider? push}) async {
+  Future<void> initialize(PayghaamConfig config, {PushProvider? push}) async {
     _config = config;
     _api = ApiClient(config);
     _api.queue = OfflineQueue(_api.rawRequest);
@@ -387,7 +387,7 @@ class EngageKaro with WidgetsBindingObserver {
 
   /// Updates whether consent is required before any network calls are made.
   void setConsentRequired(bool required) {
-    _config = EngageKaroConfig(
+    _config = PayghaamConfig(
       appId: _config.appId,
       apiKey: _config.apiKey,
       baseUrl: _config.baseUrl,

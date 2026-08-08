@@ -1,4 +1,4 @@
-# EngageKaro Flutter SDK — Design
+# Payghaam Flutter SDK — Design
 
 > **Status: historical.** This is the original scaffolding doc from before push
 > was implemented — it describes Dart as the sole comms layer talking to
@@ -12,7 +12,7 @@
 
 Derived from a review of the OneSignal Flutter SDK setup guide. Goal: give a
 Flutter app a small, OneSignal-shaped API to identify users, manage
-subscriptions, set tags, and track events against the EngageKaro platform.
+subscriptions, set tags, and track events against the Payghaam platform.
 
 ## What the OneSignal SDK actually does (and what we need)
 
@@ -31,7 +31,7 @@ Layer 1 is the platform-specific heavy lifting.
 
 ### Endpoint mapping (already built on the server)
 
-| SDK action | EngageKaro endpoint | Auth |
+| SDK action | Payghaam endpoint | Auth |
 |---|---|---|
 | `login(externalId)` / identify | `POST /api/sdk/users` | SDK key |
 | register push token / email / SMS | `POST /api/sdk/users/:externalId/subscriptions` | SDK key |
@@ -45,23 +45,23 @@ API Keys), sent as `Authorization: Bearer <key>`.
 ## Public API (OneSignal-shaped)
 
 ```dart
-await EngageKaro.instance.initialize(EngageKaroConfig(
-  appId: 'project_id',          // EngageKaro project id
+await Payghaam.instance.initialize(PayghaamConfig(
+  appId: 'project_id',          // Payghaam project id
   apiKey: 'ek_client_...',      // SDK-type key
   baseUrl: 'https://api.yourhost.com',
   requireConsent: false,
 ));
 
-await EngageKaro.instance.login('your-app-user-id');     // External ID
-await EngageKaro.instance.user.addTag('plan', 'pro');
-await EngageKaro.instance.user.addTags({'level': '6'});
-await EngageKaro.instance.user.addEmail('a@b.com');
-await EngageKaro.instance.user.addSms('+1555...');
-await EngageKaro.instance.trackEvent('purchase', {'sku': 'x'});
-await EngageKaro.instance.logout();
+await Payghaam.instance.login('your-app-user-id');     // External ID
+await Payghaam.instance.user.addTag('plan', 'pro');
+await Payghaam.instance.user.addTags({'level': '6'});
+await Payghaam.instance.user.addEmail('a@b.com');
+await Payghaam.instance.user.addSms('+1555...');
+await Payghaam.instance.trackEvent('purchase', {'sku': 'x'});
+await Payghaam.instance.logout();
 
 // consent gating
-EngageKaro.instance.setConsentGiven(true);
+Payghaam.instance.setConsentGiven(true);
 ```
 
 ## The native-push fork (the one real decision)
@@ -91,11 +91,11 @@ plugs in without changing the comms layer.
 sdks/flutter/
   pubspec.yaml
   lib/
-    engagekaro_flutter.dart      # barrel export
+    payghaam_flutter.dart      # barrel export
     src/
-      config.dart                # EngageKaroConfig, SubscriptionType
+      config.dart                # PayghaamConfig, SubscriptionType
       api_client.dart            # REST client over /api/sdk/*
-      engagekaro.dart            # facade: initialize/login/logout/consent/track
+      payghaam.dart            # facade: initialize/login/logout/consent/track
       user_manager.dart          # tags, email, sms
       notifications.dart         # PushProvider interface + Notifications facade
       storage.dart               # persist externalId + anonymous device id

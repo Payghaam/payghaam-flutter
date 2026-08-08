@@ -10,12 +10,12 @@ import 'notifications.dart';
 /// The push provider — native on both platforms: **iOS → APNs** (no Firebase),
 /// **Android → FCM**. Use the same instance everywhere; there is no platform
 /// branching. The native layers expose identical channels.
-class EngageKaroPushProvider implements PushProvider {
-  static const MethodChannel _methods = MethodChannel('engagekaro/methods');
-  static const EventChannel _onToken = EventChannel('engagekaro/onToken');
-  static const EventChannel _onOpened = EventChannel('engagekaro/onOpened');
+class PayghaamPushProvider implements PushProvider {
+  static const MethodChannel _methods = MethodChannel('payghaam/methods');
+  static const EventChannel _onToken = EventChannel('payghaam/onToken');
+  static const EventChannel _onOpened = EventChannel('payghaam/onOpened');
   static const EventChannel _onForeground =
-      EventChannel('engagekaro/onForeground');
+      EventChannel('payghaam/onForeground');
 
   @override
   SubscriptionType get subscriptionType {
@@ -55,7 +55,7 @@ class EngageKaroPushProvider implements PushProvider {
   // single sink per channel, so the last subscriber silently replaced the
   // previous one: when a host app did
   //
-  //     EngageKaro.instance.initialize(config, push: push);  // SDK subscribes
+  //     Payghaam.instance.initialize(config, push: push);  // SDK subscribes
   //     push.onNotificationOpened.listen(...);               // app subscribes
   //
   // the app's listener orphaned the SDK's, and the SDK stopped reporting `opened`

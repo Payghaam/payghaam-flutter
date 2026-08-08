@@ -1,4 +1,4 @@
-package com.engagekaro.engagekaro_flutter
+package com.payghaam.payghaam_flutter
 
 import android.app.Activity
 import android.content.Context
@@ -8,8 +8,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.app.ActivityCompat
-import com.engagekaro.sdk.EngageKaro
-import com.engagekaro.sdk.SubscriptionType
+import com.payghaam.sdk.Payghaam
+import com.payghaam.sdk.SubscriptionType
 import com.google.firebase.messaging.FirebaseMessaging
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -30,7 +30,7 @@ import kotlinx.coroutines.withContext
 /// Native Android plugin: FCM token, notification permission, foreground +
 /// tap events, cold-start, and shared config for delivered receipts. Mirrors the
 /// iOS plugin's method/event channels so one Dart provider serves both platforms.
-class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
+class PayghaamFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
   PluginRegistry.NewIntentListener, PluginRegistry.RequestPermissionsResultListener {
 
   private lateinit var context: Context
@@ -41,23 +41,23 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     context = binding.applicationContext
-    methods = MethodChannel(binding.binaryMessenger, "engagekaro/methods")
+    methods = MethodChannel(binding.binaryMessenger, "payghaam/methods")
     methods.setMethodCallHandler(this)
-    EventChannel(binding.binaryMessenger, "engagekaro/onToken").setStreamHandler(SinkHandler(Channel.TOKEN))
-    EventChannel(binding.binaryMessenger, "engagekaro/onOpened").setStreamHandler(SinkHandler(Channel.OPENED))
-    EventChannel(binding.binaryMessenger, "engagekaro/onForeground").setStreamHandler(SinkHandler(Channel.FOREGROUND))
-    // Forwards EngagekaroFirebaseMessagingService's canonical-SDK-delegated message
+    EventChannel(binding.binaryMessenger, "payghaam/onToken").setStreamHandler(SinkHandler(Channel.TOKEN))
+    EventChannel(binding.binaryMessenger, "payghaam/onOpened").setStreamHandler(SinkHandler(Channel.OPENED))
+    EventChannel(binding.binaryMessenger, "payghaam/onForeground").setStreamHandler(SinkHandler(Channel.FOREGROUND))
+    // Forwards PayghaamFirebaseMessagingService's canonical-SDK-delegated message
     // handling back to Dart. Tap routing ("onOpened") deliberately does NOT go
-    // through EngageKaro.onNotificationOpened — this plugin already dispatches taps
+    // through Payghaam.onNotificationOpened — this plugin already dispatches taps
     // itself via ActivityAware/NewIntentListener below, and wiring both would
-    // double-dispatch (and, via EngageKaro's own deep-link fallback, could open a
+    // double-dispatch (and, via Payghaam's own deep-link fallback, could open a
     // campaign link twice).
-    EngageKaro.onMessageReceivedHook = { payload -> emitForeground(payload) }
+    Payghaam.onMessageReceivedHook = { payload -> emitForeground(payload) }
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     methods.setMethodCallHandler(null)
-    EngageKaro.onMessageReceivedHook = null
+    Payghaam.onMessageReceivedHook = null
     scope.cancel()
   }
 
@@ -85,7 +85,7 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         val apiKey = args?.get("apiKey") as? String
         val baseUrl = args?.get("baseUrl") as? String
         if (apiKey != null && baseUrl != null) {
-          EngageKaro.persistBridgeConfig(
+          Payghaam.persistBridgeConfig(
             context = context,
             apiKey = apiKey,
             baseUrl = baseUrl,
@@ -96,18 +96,18 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         result.success(null)
       }
       "apiClearIdentity" -> {
-        EngageKaro.clearBridgeIdentity(context)
+        Payghaam.clearBridgeIdentity(context)
         result.success(null)
       }
       "apiIdentify" -> bridgeCall(result) {
         @Suppress("UNCHECKED_CAST")
         val ctx = args?.get("deviceContext") as? Map<String, Any?>
-        EngageKaro.bridgeIdentify(ctx)
+        Payghaam.bridgeIdentify(ctx)
       }
       "apiAddSubscription" -> bridgeCall(result) {
         val type = args?.get("type") as? String ?: return@bridgeCall
         val token = args["token"] as? String ?: return@bridgeCall
-        EngageKaro.bridgeAddSubscription(
+        Payghaam.bridgeAddSubscription(
           SubscriptionType.valueOf(type),
           token,
           args["deviceModel"] as? String,
@@ -118,22 +118,22 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
       "apiUpdateTags" -> bridgeCall(result) {
         @Suppress("UNCHECKED_CAST")
         val tags = args?.get("tags") as? Map<String, Any?> ?: emptyMap()
-        EngageKaro.addTags(tags)
+        Payghaam.addTags(tags)
       }
       "apiTrack" -> bridgeCall(result) {
         val name = args?.get("name") as? String ?: return@bridgeCall
         @Suppress("UNCHECKED_CAST")
         val props = args["properties"] as? Map<String, Any?>
-        EngageKaro.trackEvent(name, props)
+        Payghaam.trackEvent(name, props)
       }
       "apiReportReceipt" -> bridgeCall(result) {
         val messageId = args?.get("messageId") as? String ?: return@bridgeCall
         val event = args["event"] as? String ?: return@bridgeCall
         @Suppress("UNCHECKED_CAST")
         val props = args["properties"] as? Map<String, Any?>
-        EngageKaro.reportPushReceipt(messageId, event, props)
+        Payghaam.reportPushReceipt(messageId, event, props)
       }
-      "apiFlushQueue" -> bridgeCall(result) { EngageKaro.bridgeFlushQueue() }
+      "apiFlushQueue" -> bridgeCall(result) { Payghaam.bridgeFlushQueue() }
       else -> result.notImplemented()
     }
   }
@@ -143,7 +143,7 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
    * inside the canonical SDK already swallows retryable failures (parks them in
    * the offline queue), so this only ever surfaces a Flutter error for a
    * non-retryable one (e.g. a 4xx) — Dart wraps that back into
-   * `EngageKaroApiException`.
+   * `PayghaamApiException`.
    */
   private fun bridgeCall(result: Result, block: suspend () -> Unit) {
     scope.launch {
@@ -153,9 +153,9 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
       } catch (t: Throwable) {
         withContext(Dispatchers.Main) {
           // `details` carries the status code (if any) so Dart can reconstruct a
-          // proper EngageKaroApiException instead of parsing the message string.
-          val statusCode = (t as? com.engagekaro.sdk.EngageKaroApiException)?.statusCode
-          result.error("engagekaro_api_error", t.message ?: t.toString(), statusCode)
+          // proper PayghaamApiException instead of parsing the message string.
+          val statusCode = (t as? com.payghaam.sdk.PayghaamApiException)?.statusCode
+          result.error("payghaam_api_error", t.message ?: t.toString(), statusCode)
         }
       }
     }
@@ -329,14 +329,14 @@ class EngagekaroFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
 
     /**
      * Persists config for headless FCM handling by delegating to the canonical SDK
-     * ([EngageKaro.persistBridgeConfig]) instead of maintaining a separate
+     * ([Payghaam.persistBridgeConfig]) instead of maintaining a separate
      * SharedPreferences store — see sdk-native-wrapper-design.md. Dart calls this via
      * `push.shareConfig(...)` once after `initialize()`/`login()`.
      */
     fun saveSharedConfig(context: Context, args: Map<String, Any?>) {
       val apiBase = args["apiBase"] as? String ?: return
       val apiKey = args["apiKey"] as? String ?: return
-      EngageKaro.persistBridgeConfig(
+      Payghaam.persistBridgeConfig(
         context = context,
         apiKey = apiKey,
         baseUrl = apiBase,

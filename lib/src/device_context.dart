@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-const _methods = MethodChannel('engagekaro/methods');
-const kEngageKaroSdkVersion = '0.1.0';
+const _methods = MethodChannel('payghaam/methods');
+const kPayghaamSdkVersion = '0.1.0';
 
 /// Auto-collected locale, device, and app metadata sent on identify / session pings.
 class DeviceContext {
@@ -66,7 +66,7 @@ class DeviceContext {
       osVersion: _str(native?['osVersion']),
       appVersion: _str(native?['appVersion']),
       deviceModel: _str(native?['deviceModel']),
-      sdkVersion: _str(native?['sdkVersion']) ?? kEngageKaroSdkVersion,
+      sdkVersion: _str(native?['sdkVersion']) ?? kPayghaamSdkVersion,
       pushPermission: pushPermission,
       sessionStart: sessionStart,
     );

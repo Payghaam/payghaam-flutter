@@ -1,4 +1,4 @@
-group 'com.engagekaro.engagekaro_flutter'
+group 'com.payghaam.payghaam_flutter'
 version '0.1.0'
 
 buildscript {
@@ -24,7 +24,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace 'com.engagekaro.engagekaro_flutter'
+    namespace 'com.payghaam.payghaam_flutter'
     compileSdk 34
 
     defaultConfig {
@@ -49,6 +49,6 @@ dependencies {
     // from the consuming app's settings.gradle — see sdk-native-wrapper-design.md.
     // Brings in firebase-messaging and kotlinx-coroutines-android transitively, so
     // this plugin no longer declares them directly.
-    implementation "com.engagekaro:engagekaro"
+    implementation "com.payghaam:payghaam"
     implementation 'androidx.core:core-ktx:1.13.1'
 }

@@ -1,10 +1,10 @@
 import 'native_push_provider.dart';
 
-/// Deprecated: use [EngageKaroPushProvider], which now works on **both** iOS and
+/// Deprecated: use [PayghaamPushProvider], which now works on **both** iOS and
 /// Android from the single plugin (no platform branch, no companion package).
-@Deprecated('Use EngageKaroPushProvider — one provider for iOS and Android.')
-class ApnsPushProvider extends EngageKaroPushProvider {
-  /// Deprecated alias for [EngageKaroPushProvider].
+@Deprecated('Use PayghaamPushProvider — one provider for iOS and Android.')
+class ApnsPushProvider extends PayghaamPushProvider {
+  /// Deprecated alias for [PayghaamPushProvider].
   ApnsPushProvider();
 
   /// Deprecated alias for [shareConfig].

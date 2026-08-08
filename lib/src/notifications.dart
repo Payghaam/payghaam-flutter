@@ -2,7 +2,7 @@ import 'config.dart';
 
 /// Strategy interface for the native push layer. Implement this with
 /// `firebase_messaging` (recommended) or a native plugin, and pass it to
-/// [EngageKaro.initialize]. Keeping it abstract makes the comms core
+/// [Payghaam.initialize]. Keeping it abstract makes the comms core
 /// independent of any push provider.
 abstract class PushProvider {
   /// Ask the OS for notification permission. Returns whether granted.

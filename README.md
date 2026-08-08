@@ -1,6 +1,6 @@
-# engagekaro_flutter
+# payghaam_flutter
 
-Flutter SDK for the EngageKaro engagement platform. Identify users, register
+Flutter SDK for the Payghaam engagement platform. Identify users, register
 push/email/SMS subscriptions, set tags, and track events.
 
 See [DESIGN.md](./DESIGN.md) for architecture and the native-push strategy.
@@ -9,25 +9,25 @@ See [DESIGN.md](./DESIGN.md) for architecture and the native-push strategy.
 
 ```yaml
 dependencies:
-  engagekaro_flutter:
+  payghaam_flutter:
     path: ../sdks/flutter   # or a git/pub ref once published
 ```
 
 ## Quick start
 
 ```dart
-import 'package:engagekaro_flutter/engagekaro_flutter.dart';
+import 'package:payghaam_flutter/payghaam_flutter.dart';
 
-await EngageKaro.instance.initialize(EngageKaroConfig(
+await Payghaam.instance.initialize(PayghaamConfig(
   appId: 'YOUR_PROJECT_ID',
   apiKey: 'ek_client_...',          // SDK-type key from the dashboard
   baseUrl: 'https://api.yourhost.com',
 ));
 
-await EngageKaro.instance.login('your-backend-user-id');
-await EngageKaro.instance.user.addTag('plan', 'pro');
-await EngageKaro.instance.user.addEmail('user@example.com');
-await EngageKaro.instance.trackEvent('purchase', {'sku': 'sku_123'});
+await Payghaam.instance.login('your-backend-user-id');
+await Payghaam.instance.user.addTag('plan', 'pro');
+await Payghaam.instance.user.addEmail('user@example.com');
+await Payghaam.instance.trackEvent('purchase', {'sku': 'sku_123'});
 ```
 
 ## Enabling push
@@ -36,17 +36,17 @@ Push is native on **both** platforms from this one plugin — **iOS → APNs**
 (no Firebase), **Android → FCM**. There's **no platform branch** and no
 `firebase_messaging` in your app's pubspec.
 
-`EngageKaroPushProvider` is the default, so simply:
+`PayghaamPushProvider` is the default, so simply:
 
 ```dart
-final push = EngageKaroPushProvider();
-await EngageKaro.instance.initialize(config, push: push); // or omit push — it's the default
-await EngageKaro.instance.login('user-id');
-await EngageKaro.instance.requestPushPermission();
+final push = PayghaamPushProvider();
+await Payghaam.instance.initialize(config, push: push); // or omit push — it's the default
+await Payghaam.instance.login('user-id');
+await Payghaam.instance.requestPushPermission();
 
 // Enable terminated-state `delivered` receipts (iOS NSE + Android FCM service):
 await push.shareConfig(
-  appGroup: 'group.com.yourcompany.app.engagekaro', // iOS only; Android ignores it
+  appGroup: 'group.com.yourcompany.app.payghaam', // iOS only; Android ignores it
   apiBase: config.baseUrl,
   apiKey: config.apiKey,
   externalId: 'user-id',
@@ -59,7 +59,7 @@ A campaign's **Deep link URL** arrives as `ek_url`, and anything you pass as `da
 on `POST /api/notifications` arrives alongside it:
 
 ```dart
-EngageKaro.instance.onNotificationOpened.listen((payload) {
+Payghaam.instance.onNotificationOpened.listen((payload) {
   // payload['ek_url']   → 'myapp://offers/summer'
   // payload['targetId'] → your own data key
   final target = payload['targetId'];
@@ -72,7 +72,7 @@ With **no** subscriber, the SDK opens `ek_url` itself (`ACTION_VIEW` on Android,
 is yours. Subscribe right after `initialize()`; a tap that cold-launched the app waits
 a short grace period for you before the fallback takes over.
 
-> **Subscribe via `EngageKaro.instance.onNotificationOpened`, not the provider's
+> **Subscribe via `Payghaam.instance.onNotificationOpened`, not the provider's
 > stream.** Both deliver the same payload, but the SDK's own stream is the public
 > API, and subscribing to it is what tells the SDK you're handling routing.
 
@@ -101,7 +101,7 @@ computed **on your server** with the project secret:
 
 ```dart
 // hash = HMAC_SHA256(externalId, projectSecret) — computed by YOUR backend
-await EngageKaro.instance.login('user-id', identityHash: hash);
+await Payghaam.instance.login('user-id', identityHash: hash);
 ```
 
 Never ship the secret in the app.

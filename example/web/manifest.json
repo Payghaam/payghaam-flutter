@@ -1,6 +1,6 @@
 {
-    "name": "engagekaro_example",
-    "short_name": "engagekaro_example",
+    "name": "payghaam_example",
+    "short_name": "payghaam_example",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
