@@ -7,16 +7,17 @@
 > too) for both push and API calls; Dart's `ApiClient` is a fallback used only
 > when there's no native plugin (web/desktop). See `sdk-native-wrapper-design.md`
 > at the repo root for the current architecture. Kept here for the original
-> reasoning on the OneSignal comparison and endpoint mapping, which are still
-> accurate.
+> reasoning on the comparison to established push-notification SDKs and
+> endpoint mapping, which are still accurate.
 
-Derived from a review of the OneSignal Flutter SDK setup guide. Goal: give a
-Flutter app a small, OneSignal-shaped API to identify users, manage
-subscriptions, set tags, and track events against the Payghaam platform.
+Derived from a review of a popular Flutter push-notification SDK's setup
+guide. Goal: give a Flutter app a small, similarly-shaped API to identify
+users, manage subscriptions, set tags, and track events against the Payghaam
+platform.
 
-## What the OneSignal SDK actually does (and what we need)
+## What a typical native-wrapper push SDK actually does (and what we need)
 
-The OneSignal SDK has two separable layers:
+A typical native-wrapper push SDK has two separable layers:
 
 1. **Native push plumbing** — obtains the FCM token (Android) and APNs token
    (iOS), shows notifications, runs the iOS Notification Service Extension (rich
@@ -42,7 +43,7 @@ Layer 1 is the platform-specific heavy lifting.
 Auth is the project's **SDK-type API key** (created in the dashboard → project →
 API Keys), sent as `Authorization: Bearer <key>`.
 
-## Public API (OneSignal-shaped)
+## Public API (native-wrapper-shaped)
 
 ```dart
 await Payghaam.instance.initialize(PayghaamConfig(
@@ -76,7 +77,7 @@ Layer 1 has two viable strategies:
   calls `trackEvent('push_opened', …)`. Fast to ship, minimal native code, but
   iOS rich notifications / confirmed-delivery (NSE) come later.
 
-- **B — Full native plugin (like OneSignal).** Ship a Flutter plugin with native
+- **B — Full native plugin (the approach used by established push SDKs).** Ship a Flutter plugin with native
   Kotlin (FirebaseMessagingService) and Swift (APNs registration + NSE) code.
   Full feature parity (rich push, confirmed receipt, badges) but weeks of
   platform work and a Mac/Xcode toolchain to build and test.
@@ -114,6 +115,6 @@ sdks/flutter/
 
 - The SDK uses the **SDK-type** key (client-scoped), never the REST key.
 - Add **Identity Verification** later: server issues an HMAC of the External ID
-  so a client can't impersonate another user (OneSignal does this via
-  `externalId` + auth hash). Backend needs a per-project secret + a verify step.
+  so a client can't impersonate another user (a common pattern in native-wrapper
+  push SDKs, via `externalId` + auth hash). Backend needs a per-project secret + a verify step.
 - All calls over HTTPS; never log keys or tokens.

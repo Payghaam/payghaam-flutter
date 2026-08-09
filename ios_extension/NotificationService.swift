@@ -1,6 +1,6 @@
 // Payghaam Notification Service Extension
 //
-// Copy this file into your `OneSignalNotificationServiceExtension`-style NSE
+// Copy this file into your app's Notification Service Extension (NSE)
 // target (see IOS_SETUP.md). It reports a `delivered` receipt to Payghaam even
 // when the app is terminated, and (optionally) attaches a rich image.
 //
