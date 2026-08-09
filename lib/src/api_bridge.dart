@@ -5,7 +5,7 @@ import 'api_client.dart';
 /// Native-SDK pass-through for the comms API (identify/track/tags/receipts).
 ///
 /// On iOS/Android this proxies through the canonical native SDK's `ApiClient`
-/// + offline queue (see sdk-native-wrapper-design.md §4.5) instead of Dart
+/// + offline queue (see DESIGN.md §4.5) instead of Dart
 /// making its own HTTP calls — the native SDK is the single implementation of
 /// this logic on those two platforms. On web/desktop there is no native SDK to
 /// delegate to (the bundled plugin only registers a stub method-channel

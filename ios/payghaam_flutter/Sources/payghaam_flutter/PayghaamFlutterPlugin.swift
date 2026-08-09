@@ -77,7 +77,7 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
       if let args = call.arguments as? [String: Any] { saveSharedConfig(args) }
       result(nil)
 
-    // ── Cross-platform API bridge (sdk-native-wrapper-design.md §4.5) ─────────
+    // ── Cross-platform API bridge (DESIGN.md §4.5) ─────────
     // Proxies a single call through the canonical ApiClient + offline queue,
     // replacing this plugin's old `package:http`-based ApiClient in Dart.
     case "apiSync":
@@ -257,7 +257,7 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
   }
 
   /// Delegates to the canonical SDK (sdks/ios) instead of duplicating the
-  /// locale/UIDevice snapshot — see sdk-native-wrapper-design.md. Note this
+  /// locale/UIDevice snapshot — see DESIGN.md. Note this
   /// omits `pushPermission`/`sessionStart`; the Dart layer requests those
   /// separately and merges them before sending, matching its existing
   /// behavior on Android. `Payghaam` is @MainActor; assumeIsolated is safe

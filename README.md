@@ -120,7 +120,7 @@ Auth uses the project **SDK key** as a bearer token. Use HTTPS in production.
 
 This plugin is a thin wrapper over the canonical native SDKs (`sdks/ios`,
 `sdks/android`) rather than its own implementation — see
-`sdk-native-wrapper-design.md` at the repo root for the full design.
+`DESIGN.md` at the repo root for the full design.
 
 - **iOS/Android**: `initialize`/`login`/`trackEvent`/`user.addTag(s)`/push
   registration/receipt reporting all delegate to the native SDK (via a

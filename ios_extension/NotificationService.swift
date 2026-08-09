@@ -8,12 +8,12 @@
 //  - The NSE target and the app target share an App Group.
 //  - Both targets have an Info.plist string key `PayghaamAppGroup` set to that
 //    App Group id (e.g. `group.com.yourcompany.app.payghaam`).
-//  - The main app calls `ApnsPushProvider.shareConfigForExtension(...)` after
+//  - The main app calls `PayghaamPushProvider().shareConfig(...)` after
 //    login so apiBase/apiKey/externalId are available here.
 //  - The NSE target depends on the canonical `Payghaam` pod/package
 //    (sdks/ios) — add `target 'YourNSETarget' do pod 'Payghaam', :path =>
 //    '...' end` to your Podfile, or add the Payghaam Swift package as a
-//    dependency of the target in Xcode. See sdk-native-wrapper-design.md.
+//    dependency of the target in Xcode. See DESIGN.md.
 
 import Payghaam
 import UserNotifications
@@ -61,7 +61,7 @@ class NotificationService: UNNotificationServiceExtension {
     // payghaam_flutter's saveSharedConfig, which writes these dotted keys
     // (distinct from the canonical SDK's own `ek_*` scheme used by native and
     // React Native apps; left as-is to avoid breaking already-integrated apps'
-    // NSE templates — see sdk-native-wrapper-design.md).
+    // NSE templates — see DESIGN.md).
     guard
       let appGroup = Bundle.main.object(forInfoDictionaryKey: "PayghaamAppGroup") as? String,
       let defaults = UserDefaults(suiteName: appGroup),

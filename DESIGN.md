@@ -5,7 +5,7 @@
 > `/api/sdk/*` over HTTP. That's since changed: this SDK now wraps the
 > canonical native SDKs (strategy B below, plus the comms layer moved native
 > too) for both push and API calls; Dart's `ApiClient` is a fallback used only
-> when there's no native plugin (web/desktop). See `sdk-native-wrapper-design.md`
+> when there's no native plugin (web/desktop). See `DESIGN.md`
 > at the repo root for the current architecture. Kept here for the original
 > reasoning on the comparison to established push-notification SDKs and
 > endpoint mapping, which are still accurate.

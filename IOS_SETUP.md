@@ -3,8 +3,8 @@
 The Payghaam Flutter SDK ships native iOS code that registers for APNs, gets
 the device token, and handles notification taps/foreground. A Notification
 Service Extension (NSE) adds terminated-state **confirmed delivery** and rich
-images. Android push is handled separately via `firebase_messaging` + a
-`FcmPushProvider` — these steps are iOS only.
+images. Android push is handled natively too (see
+[ANDROID_SETUP.md](./ANDROID_SETUP.md)), but these steps are iOS only.
 
 ## 1. App capabilities (main app target)
 

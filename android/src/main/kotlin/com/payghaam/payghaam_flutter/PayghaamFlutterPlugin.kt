@@ -80,7 +80,7 @@ class PayghaamFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         if (args != null) saveSharedConfig(context, args)
         result.success(null)
       }
-      // ── Cross-platform API bridge (sdk-native-wrapper-design.md §4.5) ────────
+      // ── Cross-platform API bridge (DESIGN.md §4.5) ────────
       "apiSync" -> {
         val apiKey = args?.get("apiKey") as? String
         val baseUrl = args?.get("baseUrl") as? String
@@ -330,7 +330,7 @@ class PayghaamFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     /**
      * Persists config for headless FCM handling by delegating to the canonical SDK
      * ([Payghaam.persistBridgeConfig]) instead of maintaining a separate
-     * SharedPreferences store — see sdk-native-wrapper-design.md. Dart calls this via
+     * SharedPreferences store — see DESIGN.md. Dart calls this via
      * `push.shareConfig(...)` once after `initialize()`/`login()`.
      */
     fun saveSharedConfig(context: Context, args: Map<String, Any?>) {

@@ -7,7 +7,7 @@ import com.google.firebase.messaging.RemoteMessage
 /**
  * Receives FCM messages. Delegates notification-building and `delivered`-receipt
  * reporting to the canonical Android SDK (`com.payghaam.sdk.Payghaam`) instead
- * of reimplementing them — see sdk-native-wrapper-design.md.
+ * of reimplementing them — see DESIGN.md.
  *
  * [Payghaam.restoreIfNeeded] covers the case where FCM starts this process to
  * deliver a push with the Dart engine never having run (so Dart's `initialize()`,
