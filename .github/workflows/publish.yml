@@ -21,4 +21,13 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
+      # This is the step that actually performs pub.dev's OIDC credential
+      # exchange (using the id-token: write permission above). Just having a
+      # Dart SDK present via flutter-action isn't enough — without this,
+      # `flutter pub publish` has no registered credential and falls back to
+      # the old interactive browser OAuth flow, which hangs forever in CI.
+      # dart-lang/setup-dart shares the same PUB_CACHE credentials store as
+      # Flutter's bundled pub client, so the credential it registers here is
+      # what `flutter pub publish` below picks up.
+      - uses: dart-lang/setup-dart@v1
       - run: flutter pub publish -f
