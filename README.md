@@ -9,8 +9,7 @@ See [DESIGN.md](./DESIGN.md) for architecture and the native-push strategy.
 
 ```yaml
 dependencies:
-  payghaam_flutter:
-    path: ../sdks/flutter   # or a git/pub ref once published
+  payghaam_flutter: ^0.1.0
 ```
 
 ## Quick start

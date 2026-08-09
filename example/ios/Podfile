@@ -31,9 +31,10 @@ target 'Runner' do
   use_frameworks!
 
   # Canonical native SDK — payghaam_flutter's podspec depends on 'Payghaam'
-  # by name; this local :path entry is what resolves it (no private Specs repo
-  # in this monorepo). See sdk-native-wrapper-design.md.
-  pod 'Payghaam', :path => '../../../ios'
+  # by name, now resolved from the public CocoaPods trunk (published as
+  # `Payghaam`, source: github.com/payghaam/payghaam-ios) rather than a
+  # local :path entry, since this is no longer in the same monorepo as
+  # sdks/ios.
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do

@@ -14,9 +14,12 @@ class PayghaamPushProvider implements PushProvider {
   static const MethodChannel _methods = MethodChannel('payghaam/methods');
   static const EventChannel _onToken = EventChannel('payghaam/onToken');
   static const EventChannel _onOpened = EventChannel('payghaam/onOpened');
-  static const EventChannel _onForeground =
-      EventChannel('payghaam/onForeground');
+  static const EventChannel _onForeground = EventChannel(
+    'payghaam/onForeground',
+  );
 
+  /// The subscription channel for the current platform: `iosPush` on iOS,
+  /// `androidPush` on Android, and `webPush` everywhere else.
   @override
   SubscriptionType get subscriptionType {
     switch (defaultTargetPlatform) {
@@ -29,6 +32,8 @@ class PayghaamPushProvider implements PushProvider {
     }
   }
 
+  /// Prompt the OS for notification permission. Returns whether permission
+  /// was granted, or `false` if the native plugin isn't available.
   @override
   Future<bool> requestPermission() async {
     try {
@@ -38,6 +43,8 @@ class PayghaamPushProvider implements PushProvider {
     }
   }
 
+  /// Register for remote notifications and fetch the current device push
+  /// token, or `null` if the native plugin isn't available.
   @override
   Future<String?> getToken() async {
     try {
@@ -72,8 +79,9 @@ class PayghaamPushProvider implements PushProvider {
   static Stream<Map<String, dynamic>>? _foregroundStream;
 
   @override
-  Stream<String> get onTokenRefresh =>
-      _tokenStream ??= _onToken.receiveBroadcastStream().map((e) => e as String);
+  Stream<String> get onTokenRefresh => _tokenStream ??= _onToken
+      .receiveBroadcastStream()
+      .map((e) => e as String);
 
   @override
   Stream<Map<String, dynamic>> get onNotificationOpened =>
@@ -86,8 +94,9 @@ class PayghaamPushProvider implements PushProvider {
   @override
   Future<Map<String, dynamic>?> getInitialNotification() async {
     try {
-      final res =
-          await _methods.invokeMethod<dynamic>('getInitialNotification');
+      final res = await _methods.invokeMethod<dynamic>(
+        'getInitialNotification',
+      );
       return res == null ? null : _asMap(res);
     } catch (_) {
       return null;

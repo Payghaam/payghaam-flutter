@@ -14,7 +14,12 @@ class OfflineQueue {
   static const _maxQueue = 200;
   static const _maxAge = Duration(days: 7);
 
-  final Future<void> Function(String method, String path, Map<String, dynamic> body) _sender;
+  final Future<void> Function(
+    String method,
+    String path,
+    Map<String, dynamic> body,
+  )
+  _sender;
   bool _flushing = false;
 
   OfflineQueue(this._sender);
@@ -48,7 +53,11 @@ class OfflineQueue {
   Future<void> _save(SharedPreferences p, List<Map<String, dynamic>> ops) =>
       p.setString(_key, jsonEncode(ops));
 
-  Future<void> enqueue(String method, String path, Map<String, dynamic> body) async {
+  Future<void> enqueue(
+    String method,
+    String path,
+    Map<String, dynamic> body,
+  ) async {
     final p = await SharedPreferences.getInstance();
     final ops = await _load(p);
     ops.add({

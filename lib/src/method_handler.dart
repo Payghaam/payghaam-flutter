@@ -15,6 +15,7 @@ Future<dynamic> handlePayghaamMethod(MethodCall call) async {
       return <String, dynamic>{};
     default:
       throw MissingPluginException(
-          'No implementation found for ${call.method}');
+        'No implementation found for ${call.method}',
+      );
   }
 }

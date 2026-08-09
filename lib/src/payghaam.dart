@@ -102,11 +102,13 @@ class Payghaam with WidgetsBindingObserver {
     // Mirror config/identity into the native bridge (see api_bridge.dart) so
     // apiIdentify/apiTrack/etc. work on iOS/Android without a separate
     // "did you call login() yet" state machine there.
-    unawaited(_bridge.sync(
-      apiKey: config.apiKey,
-      baseUrl: config.baseUrl,
-      externalId: _externalId,
-    ));
+    unawaited(
+      _bridge.sync(
+        apiKey: config.apiKey,
+        baseUrl: config.baseUrl,
+        externalId: _externalId,
+      ),
+    );
 
     _wirePushListeners();
     WidgetsBinding.instance.addObserver(this);
@@ -148,10 +150,10 @@ class Payghaam with WidgetsBindingObserver {
   Future<void> _syncDeviceProfile({bool sessionStart = false}) {
     final existing = _profileSyncFuture;
     if (existing != null) return existing;
-    _profileSyncFuture =
-        _doSyncDeviceProfile(sessionStart: sessionStart).whenComplete(() {
-      _profileSyncFuture = null;
-    });
+    _profileSyncFuture = _doSyncDeviceProfile(sessionStart: sessionStart)
+        .whenComplete(() {
+          _profileSyncFuture = null;
+        });
     return _profileSyncFuture!;
   }
 
@@ -178,18 +180,24 @@ class Payghaam with WidgetsBindingObserver {
   void _wirePushListeners() {
     // onError guards keep the SDK usable on platforms without the native plugin
     // (e.g. web/desktop/tests) where the event channels aren't available.
-    _subs.add(_push.onTokenRefresh.listen(
-      (token) => _registerPushToken(token),
-      onError: (e) => _reportError(e, 'onTokenRefresh'),
-    ));
-    _subs.add(_push.onNotificationOpened.listen(
-      (data) => unawaited(_dispatchOpened(data)),
-      onError: (e) => _reportError(e, 'onNotificationOpened'),
-    ));
-    _subs.add(_push.onForegroundMessage.listen(
-      (data) => _reportReceiptFromData(data, 'delivered'),
-      onError: (e) => _reportError(e, 'onForegroundMessage'),
-    ));
+    _subs.add(
+      _push.onTokenRefresh.listen(
+        (token) => _registerPushToken(token),
+        onError: (e) => _reportError(e, 'onTokenRefresh'),
+      ),
+    );
+    _subs.add(
+      _push.onNotificationOpened.listen(
+        (data) => unawaited(_dispatchOpened(data)),
+        onError: (e) => _reportError(e, 'onNotificationOpened'),
+      ),
+    );
+    _subs.add(
+      _push.onForegroundMessage.listen(
+        (data) => _reportReceiptFromData(data, 'delivered'),
+        onError: (e) => _reportError(e, 'onForegroundMessage'),
+      ),
+    );
   }
 
   /// Route a notification tap: always report the receipt, then hand the payload
@@ -218,10 +226,10 @@ class Payghaam with WidgetsBindingObserver {
         // willing to handle the scheme.
         _reportError(
           'Nothing on the device can open "$url". Register the scheme with the OS: '
-          'on Android add an <intent-filter> with android.intent.action.VIEW, '
-          'category BROWSABLE/DEFAULT and your <data android:scheme="..."/> to the '
-          'launcher activity in AndroidManifest.xml; on iOS add a URL Type in '
-          'Info.plist (CFBundleURLSchemes).',
+              'on Android add an <intent-filter> with android.intent.action.VIEW, '
+              'category BROWSABLE/DEFAULT and your <data android:scheme="..."/> to the '
+              'launcher activity in AndroidManifest.xml; on iOS add a URL Type in '
+              'Info.plist (CFBundleURLSchemes).',
           'openDeepLink',
         );
       }
@@ -269,12 +277,14 @@ class Payghaam with WidgetsBindingObserver {
     _externalId = externalId;
     _api.identityHash = identityHash;
     await _storage.setExternalId(externalId);
-    unawaited(_bridge.sync(
-      apiKey: _config.apiKey,
-      baseUrl: _config.baseUrl,
-      externalId: externalId,
-      identityHash: identityHash,
-    ));
+    unawaited(
+      _bridge.sync(
+        apiKey: _config.apiKey,
+        baseUrl: _config.baseUrl,
+        externalId: externalId,
+        identityHash: identityHash,
+      ),
+    );
     if (!_canSend) return;
 
     // Network enrichment (push token + single identify with device context) runs in background.
@@ -306,15 +316,20 @@ class Payghaam with WidgetsBindingObserver {
   }
 
   /// Track a custom event (drives journeys + analytics).
-  Future<void> trackEvent(String name,
-      [Map<String, dynamic>? properties]) async {
+  Future<void> trackEvent(
+    String name, [
+    Map<String, dynamic>? properties,
+  ]) async {
     if (!_canSend) return;
     try {
       try {
         await _bridge.track(name, properties);
       } on MissingPluginException {
         await _api.track(
-            name: name, externalId: _externalId, properties: properties);
+          name: name,
+          externalId: _externalId,
+          properties: properties,
+        );
       }
     } catch (e) {
       _reportError(e, 'trackEvent');
@@ -341,12 +356,16 @@ class Payghaam with WidgetsBindingObserver {
   /// Manually register a device push token (call this if you manage tokens
   /// yourself instead of via a PushProvider).
   Future<void> registerPushToken(
-      String token, SubscriptionType platform) async {
+    String token,
+    SubscriptionType platform,
+  ) async {
     await _registerPushToken(token, platform: platform);
   }
 
-  Future<void> _registerPushToken(String token,
-      {SubscriptionType? platform}) async {
+  Future<void> _registerPushToken(
+    String token, {
+    SubscriptionType? platform,
+  }) async {
     if (!_canSend) return;
     if (_externalId == null) {
       _pendingPushToken = token; // register once the user logs in

@@ -16,14 +16,14 @@ class ApiClient {
   String? identityHash;
 
   ApiClient(this.config, {http.Client? client})
-      : _http = client ?? http.Client();
+    : _http = client ?? http.Client();
 
   Map<String, String> get _headers => {
-        'content-type': 'application/json',
-        'authorization': 'Bearer ${config.apiKey}',
-        'x-api-key': config.apiKey,
-        if (identityHash != null) 'x-payghaam-identity-hash': identityHash!,
-      };
+    'content-type': 'application/json',
+    'authorization': 'Bearer ${config.apiKey}',
+    'x-api-key': config.apiKey,
+    if (identityHash != null) 'x-payghaam-identity-hash': identityHash!,
+  };
 
   Uri _uri(String path) => Uri.parse('${config.apiRoot}$path');
 
@@ -32,18 +32,19 @@ class ApiClient {
 
   // Fire-and-forget path: send now, or park in the offline queue on a
   // retryable failure so offline activity isn't lost.
-  Future<Map<String, dynamic>> _post(
-      String path, Map<String, dynamic> body) {
+  Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body) {
     return _sendOrQueue('POST', path, body);
   }
 
-  Future<Map<String, dynamic>> _put(
-      String path, Map<String, dynamic> body) {
+  Future<Map<String, dynamic>> _put(String path, Map<String, dynamic> body) {
     return _sendOrQueue('PUT', path, body);
   }
 
   Future<Map<String, dynamic>> _sendOrQueue(
-      String method, String path, Map<String, dynamic> body) async {
+    String method,
+    String path,
+    Map<String, dynamic> body,
+  ) async {
     try {
       final res = await rawRequest(method, path, body);
       unawaited(queue?.flush());
@@ -60,11 +61,23 @@ class ApiClient {
 
   /// Direct request without queueing — used by OfflineQueue's drain.
   Future<Map<String, dynamic>> rawRequest(
-      String method, String path, Map<String, dynamic> body) async {
-    final res = await (method == 'PUT'
-            ? _http.put(_uri(path), headers: _headers, body: jsonEncode(body))
-            : _http.post(_uri(path), headers: _headers, body: jsonEncode(body)))
-        .timeout(config.timeout);
+    String method,
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    final res =
+        await (method == 'PUT'
+                ? _http.put(
+                    _uri(path),
+                    headers: _headers,
+                    body: jsonEncode(body),
+                  )
+                : _http.post(
+                    _uri(path),
+                    headers: _headers,
+                    body: jsonEncode(body),
+                  ))
+            .timeout(config.timeout);
     return _parse(res);
   }
 
@@ -115,7 +128,9 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> updateTags(
-      String externalId, Map<String, dynamic> tags) {
+    String externalId,
+    Map<String, dynamic> tags,
+  ) {
     return _put('/users/$externalId/tags', {'tags': tags});
   }
 

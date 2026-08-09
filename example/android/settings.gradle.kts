@@ -26,11 +26,8 @@ plugins {
 include(":app")
 
 // Canonical native SDK — payghaam_flutter's build.gradle depends on
-// "com.payghaam:payghaam"; this composite build substitution resolves that to
-// the local sdks/android module instead of a Maven repo. See
-// sdk-native-wrapper-design.md.
-includeBuild("../../../android") {
-    dependencySubstitution {
-        substitute(module("com.payghaam:payghaam")).using(project(":payghaam"))
-    }
-}
+// "com.payghaam:payghaam", now resolved from Maven Central (published at
+// https://central.sonatype.com, groupId com.payghaam, artifactId payghaam)
+// rather than a local composite build. Nothing extra needed here beyond the
+// mavenCentral() repository already declared above in pluginManagement /
+// wherever the app's dependencyResolutionManagement lives.

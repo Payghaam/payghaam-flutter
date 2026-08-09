@@ -2,7 +2,7 @@
 ///
 /// Identify users, manage subscriptions, set tags, and track events against the
 /// Payghaam engagement platform. The push layer is pluggable via [PushProvider].
-library payghaam_flutter;
+library;
 
 export 'src/config.dart';
 export 'src/payghaam.dart';

@@ -20,13 +20,18 @@ class UserManager {
     final id = _externalId();
     if (id == null) {
       throw StateError(
-          'Call Payghaam.login(externalId) before setting user data.');
+        'Call Payghaam.login(externalId) before setting user data.',
+      );
     }
     return id;
   }
 
+  /// Set a single tag (key-value pair) on the current user for audience
+  /// segmentation. Shorthand for `addTags({key: value})`.
   Future<void> addTag(String key, Object value) => addTags({key: value});
 
+  /// Set multiple tags (key-value pairs) on the current user for audience
+  /// segmentation. The backend merges these with any existing tags.
   Future<void> addTags(Map<String, Object?> tags) async {
     if (!_canSend()) return;
     final externalId = _requireExternalId();
@@ -45,7 +50,10 @@ class UserManager {
     if (!_canSend()) return;
     final externalId = _requireExternalId();
     try {
-      await _bridge.addSubscription(type: SubscriptionType.email.wire, token: email);
+      await _bridge.addSubscription(
+        type: SubscriptionType.email.wire,
+        token: email,
+      );
     } on MissingPluginException {
       await _api.addSubscription(
         externalId: externalId,
@@ -60,7 +68,10 @@ class UserManager {
     if (!_canSend()) return;
     final externalId = _requireExternalId();
     try {
-      await _bridge.addSubscription(type: SubscriptionType.sms.wire, token: phoneE164);
+      await _bridge.addSubscription(
+        type: SubscriptionType.sms.wire,
+        token: phoneE164,
+      );
     } on MissingPluginException {
       await _api.addSubscription(
         externalId: externalId,

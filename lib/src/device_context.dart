@@ -33,24 +33,27 @@ class DeviceContext {
   });
 
   Map<String, dynamic> toJson() => {
-        if (country != null) 'country': country,
-        if (language != null) 'language': language,
-        if (timezone != null) 'timezone': timezone,
-        if (os != null) 'os': os,
-        if (osVersion != null) 'osVersion': osVersion,
-        if (appVersion != null) 'appVersion': appVersion,
-        if (deviceModel != null) 'deviceModel': deviceModel,
-        if (sdkVersion != null) 'sdkVersion': sdkVersion,
-        if (pushPermission != null) 'pushPermission': pushPermission,
-        if (sessionStart) 'sessionStart': true,
-      };
+    if (country != null) 'country': country,
+    if (language != null) 'language': language,
+    if (timezone != null) 'timezone': timezone,
+    if (os != null) 'os': os,
+    if (osVersion != null) 'osVersion': osVersion,
+    if (appVersion != null) 'appVersion': appVersion,
+    if (deviceModel != null) 'deviceModel': deviceModel,
+    if (sdkVersion != null) 'sdkVersion': sdkVersion,
+    if (pushPermission != null) 'pushPermission': pushPermission,
+    if (sessionStart) 'sessionStart': true,
+  };
 
-  static Future<DeviceContext> collect(
-      {bool sessionStart = false, String? pushPermission}) async {
+  static Future<DeviceContext> collect({
+    bool sessionStart = false,
+    String? pushPermission,
+  }) async {
     Map<dynamic, dynamic>? native;
     try {
-      native = await _methods
-          .invokeMethod<Map<dynamic, dynamic>>('getDeviceContext');
+      native = await _methods.invokeMethod<Map<dynamic, dynamic>>(
+        'getDeviceContext',
+      );
     } catch (_) {
       native = null;
     }

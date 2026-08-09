@@ -9,10 +9,9 @@ Pod::Spec.new do |s|
   s.source           = { :git => 'https://github.com/payghaam/payghaam-flutter.git', :tag => s.version.to_s }
   s.source_files     = 'payghaam_flutter/Sources/payghaam_flutter/**/*.swift'
   s.dependency 'Flutter'
-  # Canonical native SDK (sdks/ios) — see sdk-native-wrapper-design.md. Resolved
-  # via a local `pod 'Payghaam', :path => ...` entry in the consuming app's
-  # Podfile, the CocoaPods equivalent of the Gradle composite build used on
-  # Android.
+  # Canonical native SDK, published to the CocoaPods trunk as the `Payghaam`
+  # pod. Resolved from the public CocoaPods spec repo, same as any other
+  # third-party pod.
   s.dependency 'Payghaam'
   s.platform         = :ios, '15.0'
   s.swift_version    = '5.0'
