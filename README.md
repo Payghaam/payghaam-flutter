@@ -5,6 +5,13 @@ push/email/SMS subscriptions, set tags, and track events.
 
 See [DESIGN.md](./DESIGN.md) for architecture and the native-push strategy.
 
+## Prerequisites
+
+- Flutter ≥ 3.10.0, Dart SDK ≥ 3.0.0 (`>=3.0.0 <4.0.0`)
+- iOS 15.0+ deployment target
+- Android `minSdk` 21+
+- A Payghaam project + SDK-type API key (dashboard → Project → API keys)
+
 ## Install
 
 ```yaml
@@ -17,16 +24,18 @@ dependencies:
 ```dart
 import 'package:payghaam_flutter/payghaam_flutter.dart';
 
-await Payghaam.instance.initialize(PayghaamConfig(
-  appId: 'YOUR_PROJECT_ID',
-  apiKey: 'ek_client_...',          // SDK-type key from the dashboard
-  baseUrl: 'https://api.yourhost.com',
-));
+void main() async {
+  await Payghaam.instance.initialize(PayghaamConfig(
+    appId: 'YOUR_PROJECT_ID',
+    apiKey: 'ek_client_...',          // SDK-type key from the dashboard
+    baseUrl: 'https://api.yourhost.com',
+  ));
 
-await Payghaam.instance.login('your-backend-user-id');
-await Payghaam.instance.user.addTag('plan', 'pro');
-await Payghaam.instance.user.addEmail('user@example.com');
-await Payghaam.instance.trackEvent('purchase', {'sku': 'sku_123'});
+  await Payghaam.instance.login('your-backend-user-id');
+  await Payghaam.instance.user.addTag('plan', 'pro');
+  await Payghaam.instance.user.addEmail('user@example.com');
+  await Payghaam.instance.trackEvent('purchase', {'sku': 'sku_123'});
+}
 ```
 
 ## Enabling push
@@ -41,7 +50,7 @@ Push is native on **both** platforms from this one plugin — **iOS → APNs**
 final push = PayghaamPushProvider();
 await Payghaam.instance.initialize(config, push: push); // or omit push — it's the default
 await Payghaam.instance.login('user-id');
-await Payghaam.instance.requestPushPermission();
+await Payghaam.instance.requestPushPermission(); // don't call this at launch — see below
 
 // Enable terminated-state `delivered` receipts (iOS NSE + Android FCM service):
 await push.shareConfig(
@@ -51,6 +60,8 @@ await push.shareConfig(
   externalId: 'user-id',
 );
 ```
+
+Defer `requestPushPermission()` until the user has context for why you're asking — a prompt fired at cold launch gets reflexively denied, and a denial is hard to undo. Call it after onboarding, or right before a feature that needs push (e.g. `await Payghaam.instance.requestPushPermission();` right before enabling order-status alerts).
 
 ## Handling taps and deep links
 
@@ -115,6 +126,14 @@ Never ship the secret in the app.
 | `trackEvent` | `POST /api/sdk/events` |
 
 Auth uses the project **SDK key** as a bearer token. Use HTTPS in production.
+
+## Verify your integration
+
+1. Run the app on a physical device (push needs real APNs/FCM, not a simulator/emulator).
+2. Confirm the SDK initialized — pass `debug: true` in `PayghaamConfig` for verbose console logging.
+3. Check the dashboard (Project → Subscribers) for a new subscriber after `login()`.
+4. Send a test push from the dashboard (Project → Campaigns → test send) targeting that subscriber.
+5. Confirm it's delivered, and that tapping it fires `onNotificationOpened` and/or opens the deep link.
 
 ## Architecture
 

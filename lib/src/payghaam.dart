@@ -102,13 +102,15 @@ class Payghaam with WidgetsBindingObserver {
     // Mirror config/identity into the native bridge (see api_bridge.dart) so
     // apiIdentify/apiTrack/etc. work on iOS/Android without a separate
     // "did you call login() yet" state machine there.
-    unawaited(
-      _bridge.sync(
+    try {
+      await _bridge.sync(
         apiKey: config.apiKey,
         baseUrl: config.baseUrl,
         externalId: _externalId,
-      ),
-    );
+      );
+    } on MissingPluginException {
+      // web/desktop — ApiClient holds config directly
+    }
 
     _wirePushListeners();
     WidgetsBinding.instance.addObserver(this);
@@ -277,14 +279,16 @@ class Payghaam with WidgetsBindingObserver {
     _externalId = externalId;
     _api.identityHash = identityHash;
     await _storage.setExternalId(externalId);
-    unawaited(
-      _bridge.sync(
+    try {
+      await _bridge.sync(
         apiKey: _config.apiKey,
         baseUrl: _config.baseUrl,
         externalId: externalId,
         identityHash: identityHash,
-      ),
-    );
+      );
+    } on MissingPluginException {
+      // web/desktop
+    }
     if (!_canSend) return;
 
     // Network enrichment (push token + single identify with device context) runs in background.

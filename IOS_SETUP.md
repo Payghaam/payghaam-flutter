@@ -14,6 +14,10 @@ In Xcode → your app target → **Signing & Capabilities**, add:
 - **Background Modes** → enable **Remote notifications**
 - **App Groups** → add a group id, e.g. `group.com.yourcompany.app.payghaam`
 
+> Use an App Group id unique to this app. Don't reuse one across multiple apps
+> you own — the app and NSE share a container through it, and a shared id lets
+> unrelated apps read each other's queued data.
+
 ## 2. Tell the app + extension the App Group
 
 Add this key to the **app target's** `Info.plist` (and the NSE's later):
@@ -48,6 +52,10 @@ await push.shareConfig(
 );
 ```
 
+> Build and run now, before adding the NSE. Confirming you get a device token
+> and a test push delivers here isolates basic APNs setup from NSE-specific
+> issues (App Group mismatch, target wiring) in the next step.
+
 ## 4. Add the Notification Service Extension
 
 1. Xcode → **File ▸ New ▸ Target… ▸ Notification Service Extension**. Name it
@@ -80,5 +88,34 @@ which the SDK and NSE read to attribute the receipt.
 - The plugin sets itself as the `UNUserNotificationCenter` delegate. If you also
   use a library that claims the delegate (e.g. `flutter_local_notifications`),
   you'll need to coordinate — on the recommended iOS-native path you don't.
-- APNs `.p8`/Key ID/Team ID/Bundle ID are configured in the Payghaam dashboard
-  (Project → Channels → iOS · APNs); the device never sees them.
+- APNs is configured entirely in the Payghaam dashboard — the device never
+  sees your APNs credentials:
+  1. In the Apple Developer portal (Certificates, Identifiers & Profiles →
+     Keys), generate an APNs Auth Key (`.p8`) and note its Key ID.
+  2. Find your Team ID in the Apple Developer portal (Membership).
+  3. In the Payghaam dashboard → Project → Channels → iOS · APNs, upload the
+     `.p8` and enter the Key ID, Team ID, and your app's Bundle ID.
+  4. Save. Payghaam signs and sends pushes through APNs using these
+     credentials.
+
+## Troubleshooting
+
+**No `delivered` receipt while terminated, only `opened` on tap.**
+Cause: the NSE isn't running — usually an App Group mismatch. Fix: compare
+the App Group id in all four places it's set (app target capabilities, app
+`Info.plist`, NSE target capabilities, NSE `Info.plist`) — a typo in any one
+silently breaks the shared container the NSE reads from.
+
+**NSE target fails to build with `Payghaam` (or `import Payghaam`) not found.**
+Cause: Xcode doesn't share the app target's dependencies with extension
+targets, so the NSE needs its own. Fix: add `Payghaam` under the NSE target's
+**Frameworks and Libraries** (SPM), or for CocoaPods add a
+`target 'PayghaamNSE' do pod 'Payghaam', :path => '...' end` block to the
+Podfile and re-run `pod install`.
+
+**Tapping a push with an `ek_url` deep link opens the app but never navigates.**
+Cause: no URL Type is registered for the scheme, so `openURL` has nowhere to
+route it — the fallback described in the [README](./README.md#handling-taps-and-deep-links)
+needs a claimed scheme to work. Fix: Xcode → app target → **Info** → **URL
+Types** → **+**, and add a `CFBundleURLTypes` entry matching the scheme used
+in the campaign's Deep link URL.

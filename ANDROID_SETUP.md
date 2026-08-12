@@ -9,9 +9,13 @@ Firebase project + `google-services.json`, like any Android push integration.
 1. Create (or reuse) a Firebase project and add your Android app (package name
    must match your app's `applicationId`).
 2. Download `google-services.json` into `android/app/`.
-3. Upload the matching **FCM service-account JSON** to Payghaam
-   (Dashboard → Project → Channels → Android · FCM). Payghaam sends through
-   FCM using that; the device never sees it.
+3. Upload the matching **FCM service-account JSON** to Payghaam:
+   1. Firebase console → **Project settings → Service accounts** → generate
+      a new private key (downloads a JSON file).
+   2. Payghaam dashboard → **Project → Channels → Android · FCM** → upload
+      that JSON.
+   3. Save. Payghaam sends through FCM using that service account; the
+      device never sees it.
 
 ## 2. Gradle wiring
 
@@ -121,3 +125,30 @@ that include `ek_message_id` (the worker already does this).
   notification icon for production.
 - Android 13+ requires the runtime `POST_NOTIFICATIONS` permission, which
   `requestPushPermission()` triggers.
+- If you enable R8/ProGuard minification, verify push notifications and
+  events still work in a release build — this repo has no
+  `consumer-rules.pro` to inspect, so whether `com.payghaam:payghaam` ships
+  its own consumer rules isn't confirmable from here.
+
+## Troubleshooting
+
+**Build fails with a Kotlin/AGP/JVM version conflict when the native SDK
+composite build resolves.**
+Cause: the native SDK requires AGP 8.1.0+, Kotlin 1.9.0+, and JVM target 17;
+an app on older versions can't compile against it. Fix: bump your app's
+`android/build.gradle` (or `build.gradle.kts`) AGP and Kotlin versions, and
+set `sourceCompatibility`/`targetCompatibility`/`jvmTarget` to 17 to match.
+
+**No notifications arrive, and there's no error.**
+Cause: the `google-services.json` package name doesn't match your app's
+`applicationId`, so FCM can't route to it. Fix: confirm `package_name` in
+`google-services.json` exactly matches `applicationId` in
+`android/app/build.gradle`; regenerate from the Firebase console if it
+doesn't.
+
+**Notifications arrive but play the default sound instead of a custom one.**
+Cause: the Android notification channel is created once and cached — a
+sound change doesn't retroactively apply to a channel that already exists on
+a user's device. Fix: bump the channel id (or clear app data / reinstall
+during testing) so a fresh channel picks up the new sound. See
+[CUSTOM_SOUND.md](./CUSTOM_SOUND.md).

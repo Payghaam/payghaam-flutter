@@ -25,9 +25,14 @@ plugins {
 
 include(":app")
 
-// Canonical native SDK — payghaam_flutter's build.gradle depends on
-// "com.payghaam:payghaam", now resolved from Maven Central (published at
-// https://central.sonatype.com, groupId com.payghaam, artifactId payghaam)
-// rather than a local composite build. Nothing extra needed here beyond the
-// mavenCentral() repository already declared above in pluginManagement /
-// wherever the app's dependencyResolutionManagement lives.
+// Prefer the local Android SDK when developing next to payghaam-android so
+// fixes (e.g. hot-restart apiKey refresh) apply without republishing to Maven.
+val localAndroidSdk = file("../../../payghaam-android")
+if (localAndroidSdk.exists()) {
+    includeBuild(localAndroidSdk) {
+        dependencySubstitution {
+            substitute(module("com.payghaam:payghaam")).using(project(":payghaam"))
+        }
+    }
+}
+// Otherwise resolves "com.payghaam:payghaam" from Maven Central.

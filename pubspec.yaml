@@ -1,6 +1,6 @@
 name: payghaam_flutter
 description: Payghaam Flutter SDK — identify users, manage subscriptions, set tags, and track events with the Payghaam engagement platform.
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/payghaam/payghaam-flutter
 repository: https://github.com/payghaam/payghaam-flutter
 issue_tracker: https://github.com/payghaam/payghaam-flutter/issues
