@@ -1,4 +1,4 @@
-## 0.1.1
+## 0.1.2
 
 * Fix: an API key/base URL change (e.g. rotating a key) wasn't picked up by
   the native iOS/Android bridge until the app process was fully killed and

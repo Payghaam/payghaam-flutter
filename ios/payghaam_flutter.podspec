@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'payghaam_flutter'
-  s.version          = '0.1.1'
+  s.version          = '0.1.2'
   s.summary          = 'Payghaam Flutter SDK — iOS APNs integration.'
   s.description      = 'Native iOS push (APNs) registration and notification handling for the Payghaam Flutter SDK.'
   s.homepage         = 'https://github.com/payghaam/payghaam-flutter'

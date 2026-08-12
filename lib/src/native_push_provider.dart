@@ -49,7 +49,7 @@ class PayghaamPushProvider implements PushProvider {
   Future<String?> getToken() async {
     try {
       await _methods.invokeMethod<void>('registerForRemoteNotifications');
-      return _methods.invokeMethod<String>('getToken');
+      return await _methods.invokeMethod<String>('getToken');
     } on MissingPluginException {
       return null;
     }
