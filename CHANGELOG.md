@@ -1,3 +1,18 @@
+## 0.2.0
+
+* Add `dart run payghaam_flutter:install`, an idempotent CLI that wires native
+  push setup into the host Flutter app (`--android`, `--ios`, `--dry-run`,
+  `--app-group=`).
+* Android: applies the Google services Gradle plugin in `settings.gradle(.kts)`
+  and `app/build.gradle(.kts)`, and raises minSdk / JVM target when hardcoded
+  too low.
+* iOS: adds Push + App Group entitlements, Background Modes, and a `PayghaamNSE`
+  Notification Service Extension with `NotificationService.swift` from this
+  package.
+* Still manual after the CLI: place `android/app/google-services.json` from
+  Firebase; add FCM / APNs credentials in the Payghaam dashboard; call
+  `shareConfig` from Dart (App Group id on iOS).
+
 ## 0.1.2
 
 * Fix: an API key/base URL change (e.g. rotating a key) wasn't picked up by
@@ -6,8 +21,8 @@
   causing "Invalid API key" 401s. `initialize()`/`login()` now await the
   native sync instead of firing it unawaited, and the native SDKs rebind
   their client whenever the key/base URL actually changes.
-* Pin the native SDK dependency versions (`com.payghaam:payghaam` on
-  Android, `Payghaam` on CocoaPods) instead of leaving them unconstrained.
+* Pin Android native SDK to `com.payghaam:payghaam:0.1.7` (includes the
+  hot-restart rebind fix already published on Maven Central).
 
 ## 0.1.0
 

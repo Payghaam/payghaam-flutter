@@ -4,6 +4,30 @@
 **not** add the `firebase_messaging` Flutter plugin — but FCM still needs a
 Firebase project + `google-services.json`, like any Android push integration.
 
+## Automate setup (recommended)
+
+From your Flutter **app** root:
+
+```bash
+dart run payghaam_flutter:install
+# or only Android:
+dart run payghaam_flutter:install --android --dry-run
+```
+
+The CLI applies the Google services Gradle plugin (Kotlin or Groovy DSL) and
+bumps a hardcoded minSdk below 21 or JVM target below 17. It will **not** invent
+`google-services.json`.
+
+Still manual:
+
+1. Download `google-services.json` from Firebase into `android/app/`.
+2. Upload the matching FCM service-account JSON in the Payghaam dashboard →
+   Project → Channels → Android · FCM.
+3. Optional: register a custom deep-link scheme (section 4 below).
+
+The rest of this file is the hand-edited Gradle path if you prefer to do it
+yourself.
+
 ## 1. Firebase project + google-services.json
 
 1. Create (or reuse) a Firebase project and add your Android app (package name

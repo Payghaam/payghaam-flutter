@@ -6,6 +6,36 @@ Service Extension (NSE) adds terminated-state **confirmed delivery** and rich
 images. Android push is handled natively too (see
 [ANDROID_SETUP.md](./ANDROID_SETUP.md)), but these steps are iOS only.
 
+## Automate setup (recommended)
+
+From your Flutter **app** root:
+
+```bash
+dart run payghaam_flutter:install
+# or only iOS:
+dart run payghaam_flutter:install --ios
+# optional:
+dart run payghaam_flutter:install --ios --app-group=group.com.yourcompany.app.payghaam --dry-run
+```
+
+The CLI (idempotent, safe to re-run) writes:
+
+- Runner: Push Notifications (`aps-environment`), Background Modes →
+  `remote-notification`, App Group `group.<bundle_id>.payghaam` (or `--app-group`)
+- `PayghaamAppGroup` in Runner and NSE `Info.plist`
+- A `PayghaamNSE` Notification Service Extension target in `ios/Runner.xcodeproj`
+- `ios_extension/NotificationService.swift` copied from this package into that target
+- CocoaPods `target 'PayghaamNSE' do pod 'Payghaam' end` when a Podfile exists,
+  or the Payghaam iOS SDK as an SPM dependency of `PayghaamNSE` when it does not
+
+Still manual: upload an APNs Auth Key (`.p8`) plus Key ID, Team ID, and Bundle ID
+in the Payghaam dashboard → Project → Channels → iOS · APNs; enable the App Group
+on the App ID if Xcode signing asks; call `shareConfig(appGroup: …)` after
+`login()` (see below).
+
+The rest of this file is the click-through Xcode path if you prefer to do it
+yourself.
+
 ## 1. App capabilities (main app target)
 
 In Xcode → your app target → **Signing & Capabilities**, add:

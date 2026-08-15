@@ -16,8 +16,32 @@ See [DESIGN.md](./DESIGN.md) for architecture and the native-push strategy.
 
 ```yaml
 dependencies:
-  payghaam_flutter: ^0.1.0
+  payghaam_flutter: ^0.2.0
 ```
+
+## Automate native setup
+
+From your **app** root (not this package), after `flutter pub add payghaam_flutter`:
+
+```bash
+dart run payghaam_flutter:install
+```
+
+That is the `flutterfire configure` equivalent for this plugin. It is idempotent
+(`--dry-run` prints the plan without writing). Flags: `--android`, `--ios`,
+`--app-group=group.your.bundle.payghaam`.
+
+| Platform | What the CLI writes | Still manual |
+|---|---|---|
+| **Android** | Google services Gradle plugin (`settings.gradle(.kts)` + `app/build.gradle(.kts)`), minSdk ≥ 21 / JVM 17 if those are hardcoded too low | `android/app/google-services.json` from Firebase; FCM service-account JSON in the Payghaam dashboard; optional deep-link intent-filter |
+| **iOS** | Push + App Group entitlements, `PayghaamAppGroup`, Background Modes (`remote-notification`), `PayghaamNSE` target + `NotificationService.swift` from this package, CocoaPods `target 'PayghaamNSE'` **or** SPM `Payghaam` on that target | APNs `.p8` / Key ID / Team ID / Bundle ID in the Payghaam dashboard; enable the App Group on the App ID if Xcode signing asks |
+
+Then initialize in Dart as in [Quick start](#quick-start) and call
+`shareConfig` with the same App Group id the CLI printed (convention
+`group.<bundle_id>.payghaam`).
+
+Prefer to click through Xcode yourself? See [IOS_SETUP.md](./IOS_SETUP.md) and
+[ANDROID_SETUP.md](./ANDROID_SETUP.md) — those steps remain as a fallback.
 
 ## Quick start
 
