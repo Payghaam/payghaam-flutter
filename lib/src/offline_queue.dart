@@ -18,8 +18,7 @@ class OfflineQueue {
     String method,
     String path,
     Map<String, dynamic> body,
-  )
-  _sender;
+  ) _sender;
   bool _flushing = false;
 
   OfflineQueue(this._sender);

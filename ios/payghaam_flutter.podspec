@@ -11,7 +11,8 @@ Pod::Spec.new do |s|
   s.dependency 'Flutter'
   # Canonical native SDK, published to the CocoaPods trunk as the `Payghaam`
   # pod. Pinned so a native SDK fix ships only when this repo bumps it.
-  s.dependency 'Payghaam', '>= 0.1.2'
+  # Live Activities (`PayghaamLiveActivities`, push-wake refresh) ship in 0.1.4+.
+  s.dependency 'Payghaam', '>= 0.1.4'
   s.platform         = :ios, '15.0'
   s.swift_version    = '5.0'
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }

@@ -55,7 +55,8 @@ TextEdit ensureAppGoogleServices(String source, {required bool kotlinDsl}) {
 }
 
 /// Registers `com.google.gms.google-services` in settings.gradle(.kts) `plugins { }`.
-TextEdit ensureSettingsGoogleServices(String source, {required bool kotlinDsl}) {
+TextEdit ensureSettingsGoogleServices(String source,
+    {required bool kotlinDsl}) {
   if (hasGoogleServicesPlugin(source)) {
     return TextEdit(source);
   }

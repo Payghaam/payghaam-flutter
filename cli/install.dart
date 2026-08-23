@@ -36,7 +36,8 @@ Future<int> runInstall(List<String> argv) async {
   log.info('App:     ${project.appRoot.path}');
   log.info('Package: ${project.packageRoot.path}');
 
-  final doAndroid = args.autoPlatforms ? project.androidDir != null : args.android;
+  final doAndroid =
+      args.autoPlatforms ? project.androidDir != null : args.android;
   final doIos = args.autoPlatforms ? project.iosDir != null : args.ios;
 
   if (args.android && project.androidDir == null) {
@@ -62,7 +63,8 @@ Future<int> runInstall(List<String> argv) async {
   }
 
   log.section('Dart (not modified)');
-  log.info('Initialize push in your app, then share config with the NSE / FCM service:');
+  log.info(
+      'Initialize push in your app, then share config with the NSE / FCM service:');
   log.info('');
   log.info("  import 'package:payghaam_flutter/payghaam_flutter.dart';");
   log.info('');

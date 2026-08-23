@@ -13,5 +13,13 @@ jobs:
         with:
           channel: stable
       - run: flutter pub get
+      - name: Check formatting
+        run: dart format --set-exit-if-changed lib test example bin cli
       - run: flutter analyze
       - run: flutter test
+      - name: Package quality (pana)
+        run: |
+          dart pub global activate pana
+          # pub.dev scores out of 160; fail if granted points < 140
+          # (--exit-code-threshold = 160 - 140 = 20).
+          dart pub global run pana . --exit-code-threshold=20

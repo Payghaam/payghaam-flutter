@@ -13,13 +13,23 @@ import UserNotifications
 ///  - Capture the cold-start notification (tapped from terminated state).
 ///  - Persist API config to an App Group so the Notification Service Extension
 ///    can report `delivered` receipts even when the app is killed.
+///  - Forward background push wakes to payghaam-ios so Live Activity update
+///    tokens register while the app is suspended.
+///
+/// Live Activities: the **host AppDelegate** must call
+/// `PayghaamLiveActivities.observe(YourAttributes.self)` once after plugin
+/// registration (before `login()`). This plugin does not invent ActivityKit
+/// attributes — see the example app's `DeliveryAttributes` + local channel.
 public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate {
   private let tokenHandler = StreamSinkHandler()
   private let openedHandler = StreamSinkHandler()
   private let foregroundHandler = StreamSinkHandler()
+  private let liveActivityUpdateTokenHandler = StreamSinkHandler()
+  private let liveActivityStartTokenHandler = StreamSinkHandler()
 
   private var currentToken: String?
   private var initialNotification: [String: Any]?
+  private var liveActivityObserversInstalled = false
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let instance = PayghaamFlutterPlugin()
@@ -27,12 +37,28 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
     let methods = FlutterMethodChannel(name: "payghaam/methods", binaryMessenger: registrar.messenger())
     registrar.addMethodCallDelegate(instance, channel: methods)
 
+    let liveActivities = FlutterMethodChannel(
+      name: "payghaam/liveActivities",
+      binaryMessenger: registrar.messenger()
+    )
+    registrar.addMethodCallDelegate(instance, channel: liveActivities)
+
     FlutterEventChannel(name: "payghaam/onToken", binaryMessenger: registrar.messenger())
       .setStreamHandler(instance.tokenHandler)
     FlutterEventChannel(name: "payghaam/onOpened", binaryMessenger: registrar.messenger())
       .setStreamHandler(instance.openedHandler)
     FlutterEventChannel(name: "payghaam/onForeground", binaryMessenger: registrar.messenger())
       .setStreamHandler(instance.foregroundHandler)
+    FlutterEventChannel(
+      name: "payghaam/liveActivityUpdateToken",
+      binaryMessenger: registrar.messenger()
+    ).setStreamHandler(instance.liveActivityUpdateTokenHandler)
+    FlutterEventChannel(
+      name: "payghaam/liveActivityStartToken",
+      binaryMessenger: registrar.messenger()
+    ).setStreamHandler(instance.liveActivityStartTokenHandler)
+
+    instance.installLiveActivityNotificationObservers()
 
     registrar.addApplicationDelegate(instance)
     UNUserNotificationCenter.current().delegate = instance
@@ -75,6 +101,13 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
       }
     case "setSharedConfig":
       if let args = call.arguments as? [String: Any] { saveSharedConfig(args) }
+      result(nil)
+
+    // ── Live Activities (thin wrappers over payghaam-ios) ──
+    case "refresh":
+      if #available(iOS 16.1, *) {
+        PayghaamLiveActivities.refreshAll()
+      }
       result(nil)
 
     // ── Cross-platform API bridge (DESIGN.md §4.5) ─────────
@@ -206,6 +239,23 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
     tokenHandler.send(token)
   }
 
+  // MARK: - Push wake → Live Activity token refresh (payghaam-ios)
+
+  /// FlutterAppDelegate forwards remote notifications to plugins that return
+  /// `true`. We call payghaam-ios, which invokes `completionHandler` itself.
+  public func application(
+    _ application: UIApplication,
+    didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+    fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+  ) -> Bool {
+    // Payghaam is @MainActor; UIKit may invoke this delegate off the main thread
+    // during a background wake. Hop to the main actor before calling through.
+    Task { @MainActor in
+      Payghaam.shared.handleRemoteNotification(userInfo, fetchCompletionHandler: completionHandler)
+    }
+    return true
+  }
+
   // MARK: - UNUserNotificationCenterDelegate
 
   public func userNotificationCenter(
@@ -234,6 +284,28 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
       initialNotification = data
     }
     completionHandler()
+  }
+
+  // MARK: - Live Activity notification bridge
+
+  private func installLiveActivityNotificationObservers() {
+    guard !liveActivityObserversInstalled else { return }
+    liveActivityObserversInstalled = true
+
+    NotificationCenter.default.addObserver(
+      forName: .payghaamLiveActivityUpdateToken,
+      object: nil,
+      queue: .main
+    ) { [weak self] note in
+      self?.liveActivityUpdateTokenHandler.send(Self.jsonSafe(note.userInfo ?? [:]))
+    }
+    NotificationCenter.default.addObserver(
+      forName: .payghaamLiveActivityStartToken,
+      object: nil,
+      queue: .main
+    ) { [weak self] note in
+      self?.liveActivityStartTokenHandler.send(Self.jsonSafe(note.userInfo ?? [:]))
+    }
   }
 
   // MARK: - Helpers

@@ -79,9 +79,8 @@ class PayghaamPushProvider implements PushProvider {
   static Stream<Map<String, dynamic>>? _foregroundStream;
 
   @override
-  Stream<String> get onTokenRefresh => _tokenStream ??= _onToken
-      .receiveBroadcastStream()
-      .map((e) => e as String);
+  Stream<String> get onTokenRefresh => _tokenStream ??=
+      _onToken.receiveBroadcastStream().map((e) => e as String);
 
   @override
   Stream<Map<String, dynamic>> get onNotificationOpened =>

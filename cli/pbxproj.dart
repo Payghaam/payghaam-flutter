@@ -33,7 +33,10 @@ class PbxprojEditor {
       content.contains('/* $nseTargetName */');
 
   Set<String> get usedIds {
-    return RegExp(r'\b[A-F0-9]{24}\b').allMatches(content).map((m) => m.group(0)!).toSet();
+    return RegExp(r'\b[A-F0-9]{24}\b')
+        .allMatches(content)
+        .map((m) => m.group(0)!)
+        .toSet();
   }
 
   String newId() {
@@ -75,7 +78,10 @@ class PbxprojEditor {
     if (listId == null) return const [];
     final list = _objectBody(listId);
     if (list == null) return const [];
-    final configIds = RegExp(r'([A-F0-9]{24}) /\*').allMatches(list).map((m) => m.group(1)!).toList();
+    final configIds = RegExp(r'([A-F0-9]{24}) /\*')
+        .allMatches(list)
+        .map((m) => m.group(1)!)
+        .toList();
     final out = <RunnerConfig>[];
     for (final id in configIds) {
       final body = _objectBody(id);
@@ -166,12 +172,14 @@ class PbxprojEditor {
     final runnerId = appTargetId;
     final projId = projectId;
     if (runnerId == null || projId == null) {
-      throw StateError('Could not find the Runner application target in project.pbxproj');
+      throw StateError(
+          'Could not find the Runner application target in project.pbxproj');
     }
 
     final configs = runnerConfigs();
     if (configs.isEmpty) {
-      throw StateError('Could not read Runner build configurations from project.pbxproj');
+      throw StateError(
+          'Could not read Runner build configurations from project.pbxproj');
     }
 
     final swiftRef = newId();
@@ -222,7 +230,8 @@ class PbxprojEditor {
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 ''');
-      _addToParenList(runnerId, 'buildPhases', '\t\t\t\t$embedPhaseId /* Embed Foundation Extensions */,');
+      _addToParenList(runnerId, 'buildPhases',
+          '\t\t\t\t$embedPhaseId /* Embed Foundation Extensions */,');
     } else {
       _addToParenList(
         embedPhase,
@@ -263,9 +272,11 @@ class PbxprojEditor {
 
     final mainGroupId = _idSetting(_objectBody(projId) ?? '', 'mainGroup');
     if (mainGroupId != null) {
-      _addToParenList(mainGroupId, 'children', '\t\t\t\t$groupId /* $nseTargetName */,');
+      _addToParenList(
+          mainGroupId, 'children', '\t\t\t\t$groupId /* $nseTargetName */,');
     }
-    final productsGroupId = _idSetting(_objectBody(projId) ?? '', 'productRefGroup');
+    final productsGroupId =
+        _idSetting(_objectBody(projId) ?? '', 'productRefGroup');
     if (productsGroupId != null) {
       _addToParenList(
         productsGroupId,
@@ -296,8 +307,10 @@ class PbxprojEditor {
 		};
 ''');
 
-    _addToParenList(projId, 'targets', '\t\t\t\t$targetId /* $nseTargetName */,');
-    _addToParenList(runnerId, 'dependencies', '\t\t\t\t$depId /* PBXTargetDependency */,');
+    _addToParenList(
+        projId, 'targets', '\t\t\t\t$targetId /* $nseTargetName */,');
+    _addToParenList(
+        runnerId, 'dependencies', '\t\t\t\t$depId /* PBXTargetDependency */,');
 
     _insertInSection('PBXResourcesBuildPhase', '''
 		$resourcesId /* Resources */ = {
@@ -335,7 +348,8 @@ class PbxprojEditor {
       final bundle = (cfg.bundleId != null && !cfg.bundleId!.contains(r'$'))
           ? '${cfg.bundleId}.$nseTargetName'
           : '\$(PRODUCT_BUNDLE_IDENTIFIER).$nseTargetName';
-      final teamLine = cfg.team != null ? '\t\t\t\tDEVELOPMENT_TEAM = ${cfg.team};\n' : '';
+      final teamLine =
+          cfg.team != null ? '\t\t\t\tDEVELOPMENT_TEAM = ${cfg.team};\n' : '';
       final styleLine = cfg.codeSignStyle != null
           ? '\t\t\t\tCODE_SIGN_STYLE = ${cfg.codeSignStyle};\n'
           : '\t\t\t\tCODE_SIGN_STYLE = Automatic;\n';
@@ -373,10 +387,10 @@ $debugExtras\t\t\t\tSWIFT_VERSION = 5.0;
 
     _insertInSection('XCBuildConfiguration', configBlocks.toString());
 
-    final defaultName = configs.any((c) => c.name == 'Release')
-        ? 'Release'
-        : configs.last.name;
-    final quotedDefault = defaultName.contains('-') ? '"$defaultName"' : defaultName;
+    final defaultName =
+        configs.any((c) => c.name == 'Release') ? 'Release' : configs.last.name;
+    final quotedDefault =
+        defaultName.contains('-') ? '"$defaultName"' : defaultName;
     _insertInSection('XCConfigurationList', '''
 		$configListId /* Build configuration list for PBXNativeTarget "$nseTargetName" */ = {
 			isa = XCConfigurationList;
@@ -453,7 +467,9 @@ $configListEntries\t\t\t);
 
     final nseBody = _objectBody(nseId) ?? '';
     if (nseBody.contains(productId)) {
-      return created ? 'Added Payghaam iOS SDK (Swift Package) to the Xcode project' : null;
+      return created
+          ? 'Added Payghaam iOS SDK (Swift Package) to the Xcode project'
+          : null;
     }
 
     if (nseBody.contains('packageProductDependencies = (')) {
@@ -465,19 +481,20 @@ $configListEntries\t\t\t);
     } else {
       final range = _objectRange(nseId);
       if (range != null) {
-        final insert = '\t\t\tpackageProductDependencies = (\n\t\t\t\t$productId /* Payghaam */,\n\t\t\t);\n';
+        final insert =
+            '\t\t\tpackageProductDependencies = (\n\t\t\t\t$productId /* Payghaam */,\n\t\t\t);\n';
         // Place it before productName.
         final body = content.substring(range.start, range.end);
         final idx = body.indexOf('productName =');
         if (idx >= 0) {
           final at = range.start + idx;
-          content = '${content.substring(0, at)}$insert${content.substring(at)}';
+          content =
+              '${content.substring(0, at)}$insert${content.substring(at)}';
         }
       }
     }
     return 'Added Payghaam iOS SDK (Swift Package) to $nseTargetName';
   }
-
 
   String? _findEmbedExtensionsPhaseId() {
     final match = RegExp(
@@ -492,7 +509,8 @@ $configListEntries\t\t\t);
       content = content.replaceFirst(end, '$objects$end');
       return;
     }
-    final begin = '/* Begin $section section */\n$objects/* End $section section */\n\n';
+    final begin =
+        '/* Begin $section section */\n$objects/* End $section section */\n\n';
     const anchor = '/* Begin XCBuildConfiguration section */';
     if (content.contains(anchor)) {
       content = content.replaceFirst(anchor, '$begin$anchor');
@@ -537,7 +555,8 @@ $configListEntries\t\t\t);
     final open = range.start + settings.end - 1;
     final insertAt = open + 1;
     final line = '\n\t\t\t\t$key = $value;';
-    content = '${content.substring(0, insertAt)}$line${content.substring(insertAt)}';
+    content =
+        '${content.substring(0, insertAt)}$line${content.substring(insertAt)}';
     return true;
   }
 
@@ -581,7 +600,10 @@ $configListEntries\t\t\t);
   }
 
   String? _commentName(String id) {
-    return RegExp('$id /\\* ([^*]+) \\*/').firstMatch(content)?.group(1)?.trim();
+    return RegExp('$id /\\* ([^*]+) \\*/')
+        .firstMatch(content)
+        ?.group(1)
+        ?.trim();
   }
 
   String _unquote(String? raw) {

@@ -28,7 +28,8 @@ TextEdit ensurePayghaamNseTarget(String podfile) {
     ..writeln()
     ..writeln("target '$nseTargetName' do");
   if (useFrameworks != null) {
-    buffer.writeln(useFrameworks.startsWith(' ') ? useFrameworks : '  $useFrameworks');
+    buffer.writeln(
+        useFrameworks.startsWith(' ') ? useFrameworks : '  $useFrameworks');
   }
   if (modular) {
     buffer.writeln('  use_modular_headers!');

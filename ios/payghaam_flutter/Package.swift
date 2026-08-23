@@ -21,7 +21,8 @@ let package = Package(
         // by SPM-based consumers; the CocoaPods path (the tested integration,
         // via payghaam_flutter.podspec) resolves the equivalent 'Payghaam' pod
         // through the consuming app's Podfile instead.
-        .package(url: "https://github.com/payghaam/payghaam-ios.git", from: "0.1.0"),
+        // Live Activities APIs require 0.1.4+.
+        .package(url: "https://github.com/payghaam/payghaam-ios.git", from: "0.1.4"),
     ],
     targets: [
         .target(

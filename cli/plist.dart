@@ -10,8 +10,7 @@ class PlistDoc {
     return match?.group(1) ?? '\t';
   }
 
-  bool hasKey(String key) =>
-      content.contains('<key>$key</key>');
+  bool hasKey(String key) => content.contains('<key>$key</key>');
 
   String? stringValue(String key) {
     final match = RegExp(

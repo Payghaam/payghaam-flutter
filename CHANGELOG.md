@@ -1,3 +1,14 @@
+## Unreleased
+
+* Live Activities (iOS): plugin forwards push-wake to payghaam-ios
+  (`handleRemoteNotification` → token refresh); Dart
+  `PayghaamLiveActivities.refresh()` / token event streams; example
+  AppDelegate `observe(DeliveryAttributes)` + local start/update/end
+  method channel. CocoaPods/SPM require Payghaam iOS `>= 0.1.4`.
+* Sessions: send `session_start` on cold start and when the app returns to the
+  foreground after ≥30s in the background (OneSignal-style). Identify without
+  that ping no longer counts as a session.
+
 ## 0.2.0
 
 * Add `dart run payghaam_flutter:install`, an idempotent CLI that wires native

@@ -14,7 +14,8 @@ plugins {
     final edit = ensureAppGoogleServices(src, kotlinDsl: true);
     expect(edit.changed, isTrue);
     expect(edit.content, contains('id("com.google.gms.google-services")'));
-    expect(ensureAppGoogleServices(edit.content, kotlinDsl: true).changed, isFalse);
+    expect(ensureAppGoogleServices(edit.content, kotlinDsl: true).changed,
+        isFalse);
   });
 
   test('adds google-services to settings.gradle.kts with version', () {
@@ -42,7 +43,8 @@ android {
 ''';
     final edit = ensureAppGoogleServices(src, kotlinDsl: false);
     expect(edit.changed, isTrue);
-    expect(edit.content, contains("apply plugin: 'com.google.gms.google-services'"));
+    expect(edit.content,
+        contains("apply plugin: 'com.google.gms.google-services'"));
   });
 
   test('bumps numeric minSdk below 21 and leaves flutter.minSdkVersion', () {
@@ -84,7 +86,8 @@ buildscript {
 ''';
     final edit = ensureBuildscriptClasspath(src);
     expect(edit.changed, isTrue);
-    expect(edit.content, contains("classpath 'com.google.gms:google-services:"));
+    expect(
+        edit.content, contains("classpath 'com.google.gms:google-services:"));
     expect(ensureBuildscriptClasspath(edit.content).changed, isFalse);
   });
 }

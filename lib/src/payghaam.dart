@@ -38,7 +38,6 @@ class Payghaam with WidgetsBindingObserver {
   String? _externalId;
   String? _pendingPushToken; // captured before login completes
   String? _pushPermission; // granted | denied | unknown
-  bool _sessionCountedThisLaunch = false;
   final SessionTracker _sessions = SessionTracker();
   final List<StreamSubscription<dynamic>> _subs = [];
   Future<void>? _profileSyncFuture;
@@ -127,7 +126,8 @@ class Payghaam with WidgetsBindingObserver {
     }
 
     if (_externalId != null) {
-      unawaited(_syncDeviceProfile(sessionStart: true));
+      unawaited(
+          _syncDeviceProfile(sessionStart: _sessions.noteForegroundResume()));
     }
   }
 
@@ -152,20 +152,18 @@ class Payghaam with WidgetsBindingObserver {
   Future<void> _syncDeviceProfile({bool sessionStart = false}) {
     final existing = _profileSyncFuture;
     if (existing != null) return existing;
-    _profileSyncFuture = _doSyncDeviceProfile(sessionStart: sessionStart)
-        .whenComplete(() {
-          _profileSyncFuture = null;
-        });
+    _profileSyncFuture =
+        _doSyncDeviceProfile(sessionStart: sessionStart).whenComplete(() {
+      _profileSyncFuture = null;
+    });
     return _profileSyncFuture!;
   }
 
   Future<void> _doSyncDeviceProfile({bool sessionStart = false}) async {
     if (!_canSend || _externalId == null) return;
     try {
-      final countSession = sessionStart && !_sessionCountedThisLaunch;
-      if (countSession) _sessionCountedThisLaunch = true;
       final ctx = await DeviceContext.collect(
-        sessionStart: countSession,
+        sessionStart: false,
         pushPermission: _pushPermission,
       );
       final json = ctx.toJson();
@@ -173,6 +171,13 @@ class Payghaam with WidgetsBindingObserver {
         await _bridge.identify(deviceContext: json);
       } on MissingPluginException {
         await _api.identify(externalId: _externalId, deviceContext: json);
+      }
+      if (sessionStart) {
+        try {
+          await _bridge.track(kSessionEventName);
+        } on MissingPluginException {
+          await _api.track(name: kSessionEventName, externalId: _externalId);
+        }
       }
     } catch (e) {
       _reportError(e, 'syncDeviceProfile');
@@ -308,7 +313,7 @@ class Payghaam with WidgetsBindingObserver {
   Future<void> _doPostLoginTasks() async {
     final token = _pendingPushToken ?? await _push.getToken();
     if (token != null) await _registerPushToken(token);
-    await _syncDeviceProfile(sessionStart: true);
+    await _syncDeviceProfile(sessionStart: _sessions.noteForegroundResume());
   }
 
   /// Clear the current user identity on this device.

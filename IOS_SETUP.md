@@ -102,6 +102,62 @@ await push.shareConfig(
 4. NSE target → `Info.plist` → add the same `PayghaamAppGroup` key/value.
 5. Set the NSE **Minimum Deployment Target** to match the app (iOS 15+ rec.).
 
+## Live Activities
+
+Live Activities are **iOS-only**. Token registration lives in payghaam-ios;
+the Flutter plugin forwards push wakes and exposes a thin Dart API. You still
+own the Widget Extension UI.
+
+### 1. Entitlements / Info.plist
+
+- Runner (and the Widget Extension): **Push Notifications**
+- Runner `Info.plist`: `NSSupportsLiveActivities` = `YES`
+- Background Modes → **Remote notifications** (already required for push)
+
+### 2. Observe in AppDelegate
+
+Call once after `GeneratedPluginRegistrant.register`, before Dart `login()`:
+
+```swift
+import Payghaam
+
+if #available(iOS 16.1, *) {
+  PayghaamLiveActivities.observe(YourAttributes.self)
+}
+```
+
+The plugin calls `Payghaam.shared.handleRemoteNotification` on background push
+wake — you do not need a second copy in AppDelegate unless you bypass the plugin.
+
+### 3. Widget Extension (Xcode)
+
+1. **File → New → Target → Widget Extension**; enable **Include Live Activity**.
+2. Share your `ActivityAttributes` source with Runner + the extension (see
+   `example/ios/Runner/DeliveryAttributes.swift` and
+   `example/ios/LiveActivity/DeliveryLiveActivity.swift`).
+3. Optional local start from Dart: copy
+   `example/ios/Runner/LiveActivitiesLocalChannel.swift` and register it from
+   AppDelegate (channel `payghaam/liveActivitiesLocal`).
+
+### 4. Drive from your backend
+
+Use a **project REST API key** (not the SDK key):
+
+```bash
+POST   /api/live-activities
+PATCH  /api/live-activities/{activityId}
+DELETE /api/live-activities/{activityId}
+```
+
+From Dart you can call `PayghaamLiveActivities.refresh()` to re-scan tokens, and
+listen to `onUpdateTokenRegistered` / `onStartTokenRegistered`.
+
+### 5. Allow consent (push-to-start)
+
+After a server **start**, the user must tap **Allow** on the lock-screen
+activity before the update token is minted. Wire Background Modes + the
+plugin's push-wake handler so a suspended app can POST the token.
+
 ## How delivery is confirmed in each app state
 
 | App state | Mechanism | Receipt |

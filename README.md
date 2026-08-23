@@ -87,6 +87,13 @@ await push.shareConfig(
 
 Defer `requestPushPermission()` until the user has context for why you're asking — a prompt fired at cold launch gets reflexively denied, and a denial is hard to undo. Call it after onboarding, or right before a feature that needs push (e.g. `await Payghaam.instance.requestPushPermission();` right before enabling order-status alerts).
 
+## Sessions
+
+After `login()`, the SDK reports `session_start` on cold start and when the app
+returns to the foreground after at least 30 seconds in the background. That is
+what “last session” / inactive-N-days segments use. `login()` / identify by
+itself is not a session, and neither is opening a push.
+
 ## Handling taps and deep links
 
 A campaign's **Deep link URL** arrives as `ek_url`, and anything you pass as `data`
@@ -118,10 +125,68 @@ a short grace period for you before the fallback takes over.
 
 Reserved payload keys: `ek_message_id`, `ek_url`, `ek_image`, `ek_sound`, `title`, `body`.
 
+## Live Activities (iOS)
+
+Payghaam drives Live Activities from your **server**. Appearance is your
+SwiftUI Widget Extension; this plugin reuses **payghaam-ios** for token
+registration — it does not rebuild ActivityKit in Dart.
+
+### Host AppDelegate (required)
+
+After plugin registration, observe your attributes type (before `login()`):
+
+```swift
+import Payghaam
+
+GeneratedPluginRegistrant.register(with: self)
+if #available(iOS 16.1, *) {
+  PayghaamLiveActivities.observe(DeliveryAttributes.self)
+}
+```
+
+The plugin implements `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)`
+and forwards to `Payghaam.shared.handleRemoteNotification(...)` so push-to-start
+/ suspended updates still mint and POST update tokens.
+
+Requires Payghaam iOS **≥ 0.1.4** (CocoaPods / SPM).
+
+### Dart
+
+```dart
+await PayghaamLiveActivities.refresh(); // → PayghaamLiveActivities.refreshAll()
+
+PayghaamLiveActivities.onUpdateTokenRegistered.listen((e) {
+  // e['activityId'], e['ok'], optional e['error']
+});
+```
+
+**Local start from Flutter** needs a typed `ActivityAttributes` in Swift. The
+example app implements `payghaam/liveActivitiesLocal` with `DeliveryAttributes`
+(`startActivity` / `updateActivity` / `endActivity`). Copy that pattern into
+your app — do not try to encode arbitrary attributes from Dart.
+
+### Server REST (project REST key, not the SDK key)
+
+```bash
+POST   /api/live-activities
+PATCH  /api/live-activities/order-4821
+DELETE /api/live-activities/order-4821
+```
+
+After **push-to-start**, the user must tap **Allow** on the lock-screen activity
+before ActivityKit mints the update token. Local starts do not require that step.
+
+### Widget Extension
+
+Add a Widget Extension in Xcode (Include Live Activity), share your attributes
+struct with Runner, set `NSSupportsLiveActivities` = `YES`, and enable Push on
+both targets. See [IOS_SETUP.md](./IOS_SETUP.md#live-activities) and the
+example under `example/ios/LiveActivity/`.
+
 Platform setup:
 
 - **iOS** — [IOS_SETUP.md](./IOS_SETUP.md): capabilities, App Group, Notification
-  Service Extension.
+  Service Extension, Live Activities.
 - **Android** — [ANDROID_SETUP.md](./ANDROID_SETUP.md): add a Firebase project +
   `google-services.json` (no `firebase_messaging` plugin needed).
 - **Custom sounds** — [CUSTOM_SOUND.md](./CUSTOM_SOUND.md): bundle a sound file
@@ -176,3 +241,7 @@ This plugin is a thin wrapper over the canonical native SDKs (`sdks/ios`,
   (push was never supported there either), so Dart falls back to its own
   `package:http`-based client automatically when the native plugin isn't
   present. That's the one place this SDK still makes its own HTTP calls.
+
+## Docs follow-up
+
+PRs that change native setup or the public Dart API get a bot comment pointing at the matching pages in [payghaam-mono](https://github.com/Payghaam/payghaam-mono) (`/docs/sdk/flutter`). Mono also clones this public repo weekly and can open the docs PR there. See [`.github/DOCS-FOLLOW-UP.md`](.github/DOCS-FOLLOW-UP.md).

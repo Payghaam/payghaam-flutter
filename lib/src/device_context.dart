@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 
 const _methods = MethodChannel('payghaam/methods');
 const kPayghaamSdkVersion = '0.1.0';
+const kSessionEventName = 'session_start';
 
 /// Auto-collected locale, device, and app metadata sent on identify / session pings.
 class DeviceContext {
@@ -33,17 +34,17 @@ class DeviceContext {
   });
 
   Map<String, dynamic> toJson() => {
-    if (country != null) 'country': country,
-    if (language != null) 'language': language,
-    if (timezone != null) 'timezone': timezone,
-    if (os != null) 'os': os,
-    if (osVersion != null) 'osVersion': osVersion,
-    if (appVersion != null) 'appVersion': appVersion,
-    if (deviceModel != null) 'deviceModel': deviceModel,
-    if (sdkVersion != null) 'sdkVersion': sdkVersion,
-    if (pushPermission != null) 'pushPermission': pushPermission,
-    if (sessionStart) 'sessionStart': true,
-  };
+        if (country != null) 'country': country,
+        if (language != null) 'language': language,
+        if (timezone != null) 'timezone': timezone,
+        if (os != null) 'os': os,
+        if (osVersion != null) 'osVersion': osVersion,
+        if (appVersion != null) 'appVersion': appVersion,
+        if (deviceModel != null) 'deviceModel': deviceModel,
+        if (sdkVersion != null) 'sdkVersion': sdkVersion,
+        if (pushPermission != null) 'pushPermission': pushPermission,
+        if (sessionStart) 'sessionStart': true,
+      };
 
   static Future<DeviceContext> collect({
     bool sessionStart = false,
@@ -111,9 +112,9 @@ class DeviceContext {
   }
 }
 
-/// Debounces foreground resumes — one session per 30 minutes of inactivity.
+/// Debounces foreground resumes — a new session after ≥30s in the background.
 class SessionTracker {
-  static const _gap = Duration(minutes: 30);
+  static const _gap = Duration(seconds: 30);
   DateTime? _lastSessionAt;
 
   bool noteForegroundResume() {

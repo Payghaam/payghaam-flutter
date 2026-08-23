@@ -17,7 +17,8 @@ void main() {
     final doc = PlistDoc(original);
     expect(doc.setString('PayghaamAppGroup', 'group.com.app.payghaam'), isTrue);
     expect(doc.stringValue('PayghaamAppGroup'), 'group.com.app.payghaam');
-    expect(doc.setString('PayghaamAppGroup', 'group.com.app.payghaam'), isFalse);
+    expect(
+        doc.setString('PayghaamAppGroup', 'group.com.app.payghaam'), isFalse);
   });
 
   test('addArrayString appends remote-notification without duplicating', () {
@@ -33,9 +34,12 @@ void main() {
 </plist>
 ''';
     final doc = PlistDoc(original);
-    expect(doc.addArrayString('UIBackgroundModes', 'remote-notification'), isTrue);
-    expect(doc.arrayStrings('UIBackgroundModes'), ['fetch', 'remote-notification']);
-    expect(doc.addArrayString('UIBackgroundModes', 'remote-notification'), isFalse);
+    expect(
+        doc.addArrayString('UIBackgroundModes', 'remote-notification'), isTrue);
+    expect(doc.arrayStrings('UIBackgroundModes'),
+        ['fetch', 'remote-notification']);
+    expect(doc.addArrayString('UIBackgroundModes', 'remote-notification'),
+        isFalse);
   });
 
   test('addArrayString creates the array when missing', () {
@@ -50,7 +54,8 @@ void main() {
 ''';
     final doc = PlistDoc(original);
     expect(
-      doc.addArrayString('com.apple.security.application-groups', 'group.x.payghaam'),
+      doc.addArrayString(
+          'com.apple.security.application-groups', 'group.x.payghaam'),
       isTrue,
     );
     expect(

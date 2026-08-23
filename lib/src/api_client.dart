@@ -16,14 +16,14 @@ class ApiClient {
   String? identityHash;
 
   ApiClient(this.config, {http.Client? client})
-    : _http = client ?? http.Client();
+      : _http = client ?? http.Client();
 
   Map<String, String> get _headers => {
-    'content-type': 'application/json',
-    'authorization': 'Bearer ${config.apiKey}',
-    'x-api-key': config.apiKey,
-    if (identityHash != null) 'x-payghaam-identity-hash': identityHash!,
-  };
+        'content-type': 'application/json',
+        'authorization': 'Bearer ${config.apiKey}',
+        'x-api-key': config.apiKey,
+        if (identityHash != null) 'x-payghaam-identity-hash': identityHash!,
+      };
 
   Uri _uri(String path) => Uri.parse('${config.apiRoot}$path');
 
@@ -65,19 +65,18 @@ class ApiClient {
     String path,
     Map<String, dynamic> body,
   ) async {
-    final res =
-        await (method == 'PUT'
-                ? _http.put(
-                    _uri(path),
-                    headers: _headers,
-                    body: jsonEncode(body),
-                  )
-                : _http.post(
-                    _uri(path),
-                    headers: _headers,
-                    body: jsonEncode(body),
-                  ))
-            .timeout(config.timeout);
+    final res = await (method == 'PUT'
+            ? _http.put(
+                _uri(path),
+                headers: _headers,
+                body: jsonEncode(body),
+              )
+            : _http.post(
+                _uri(path),
+                headers: _headers,
+                body: jsonEncode(body),
+              ))
+        .timeout(config.timeout);
     return _parse(res);
   }
 

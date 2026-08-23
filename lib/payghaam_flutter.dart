@@ -9,6 +9,7 @@ export 'src/payghaam.dart';
 export 'src/user_manager.dart';
 export 'src/notifications.dart' show PushProvider, NoopPushProvider;
 export 'src/native_push_provider.dart';
+export 'src/live_activities.dart';
 // ignore: deprecated_member_use_from_same_package
 export 'src/apns_push_provider.dart';
 export 'src/api_client.dart' show PayghaamApiException;

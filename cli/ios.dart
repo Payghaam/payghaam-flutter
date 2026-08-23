@@ -9,7 +9,8 @@ import 'project.dart';
 const nseName = 'PayghaamNSE';
 const minIos = '15.0';
 
-void configureIos(InstallProject project, InstallLog log, {String? appGroupFlag}) {
+void configureIos(InstallProject project, InstallLog log,
+    {String? appGroupFlag}) {
   final ios = project.iosDir;
   if (ios == null) {
     log.warn('No ios/ directory — skipping iOS');
@@ -45,7 +46,8 @@ void configureIos(InstallProject project, InstallLog log, {String? appGroupFlag}
   _ensureRunnerInfoPlist(ios, appGroup, log);
   _ensureRunnerEntitlements(ios, pbx, appGroup, log);
   _writeNseFiles(project, ios, appGroup, log);
-  _updatePbxproj(pbxFile, pbx, deployment, log, hasPodfile: File('${ios.path}/Podfile').existsSync());
+  _updatePbxproj(pbxFile, pbx, deployment, log,
+      hasPodfile: File('${ios.path}/Podfile').existsSync());
   _updatePodfile(ios, log);
 
   if (pbx.hasNseTarget || log.dryRun) {
@@ -96,7 +98,8 @@ String _resolveAppGroup({
 
   final info = File('${ios.path}/Runner/Info.plist');
   if (info.existsSync()) {
-    final existing = PlistDoc(info.readAsStringSync()).stringValue('PayghaamAppGroup');
+    final existing =
+        PlistDoc(info.readAsStringSync()).stringValue('PayghaamAppGroup');
     if (existing != null && existing.isNotEmpty) {
       log.ok('Using existing PayghaamAppGroup from Info.plist');
       return existing;
@@ -154,7 +157,8 @@ void _ensureRunnerInfoPlist(Directory ios, String appGroup, InstallLog log) {
   }
   if (doc.addArrayString('UIBackgroundModes', 'remote-notification')) {
     changed = true;
-    log.changedLine('Enabled Background Modes → remote-notification in Runner/Info.plist');
+    log.changedLine(
+        'Enabled Background Modes → remote-notification in Runner/Info.plist');
   } else {
     log.ok('Background Modes already includes remote-notification');
   }
@@ -256,7 +260,9 @@ void _writeNseFiles(
   }
 
   if (!entDest.existsSync()) {
-    if (!log.dryRun) entDest.writeAsStringSync(nseEntitlementsTemplate(appGroup));
+    if (!log.dryRun) {
+      entDest.writeAsStringSync(nseEntitlementsTemplate(appGroup));
+    }
     log.changedLine('Created $nseName/$nseName.entitlements');
   } else {
     final doc = PlistDoc(entDest.readAsStringSync());

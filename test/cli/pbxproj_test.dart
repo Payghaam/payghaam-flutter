@@ -5,11 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../cli/pbxproj.dart';
 
 void main() {
-  test('adds PayghaamNSE to a stock Flutter Runner.xcodeproj and is idempotent', () {
+  test('adds PayghaamNSE to a stock Flutter Runner.xcodeproj and is idempotent',
+      () {
     final fixture = File(
       'example/ios/Runner.xcodeproj/project.pbxproj',
     );
-    expect(fixture.existsSync(), isTrue, reason: 'example app pbxproj is the fixture');
+    expect(fixture.existsSync(), isTrue,
+        reason: 'example app pbxproj is the fixture');
 
     final editor = PbxprojEditor(fixture.readAsStringSync());
     expect(editor.appTargetId, isNotNull);
@@ -36,7 +38,8 @@ void main() {
     expect(editor.content, contains('dstSubfolderSpec = 13;'));
     expect(
       editor.content,
-      contains('PRODUCT_BUNDLE_IDENTIFIER = com.example.payghaamExample.PayghaamNSE;'),
+      contains(
+          'PRODUCT_BUNDLE_IDENTIFIER = com.example.payghaamExample.PayghaamNSE;'),
     );
     expect(editor.content, contains('IPHONEOS_DEPLOYMENT_TARGET = 15.0;'));
 
@@ -59,9 +62,14 @@ void main() {
   test('ensureRunnerEntitlements sets CODE_SIGN_ENTITLEMENTS once', () {
     final fixture = File('example/ios/Runner.xcodeproj/project.pbxproj');
     final editor = PbxprojEditor(fixture.readAsStringSync());
-    expect(editor.ensureRunnerEntitlements('Runner/Runner.entitlements'), isTrue);
-    expect(editor.content.contains('CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;'), isTrue);
-    expect(editor.ensureRunnerEntitlements('Runner/Runner.entitlements'), isFalse);
+    expect(
+        editor.ensureRunnerEntitlements('Runner/Runner.entitlements'), isTrue);
+    expect(
+        editor.content
+            .contains('CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;'),
+        isTrue);
+    expect(
+        editor.ensureRunnerEntitlements('Runner/Runner.entitlements'), isFalse);
   });
 
   test('maxIosVersion prefers the higher deployment target', () {

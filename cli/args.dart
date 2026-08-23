@@ -39,7 +39,8 @@ class InstallArgs {
           throw FormatException('--app-group= requires a value');
         }
       } else if (raw == '--app-group') {
-        throw FormatException('Use --app-group=<id>, e.g. --app-group=group.com.app.payghaam');
+        throw FormatException(
+            'Use --app-group=<id>, e.g. --app-group=group.com.app.payghaam');
       } else {
         throw FormatException('Unknown argument: $raw');
       }

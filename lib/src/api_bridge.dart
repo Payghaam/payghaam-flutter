@@ -58,13 +58,14 @@ class ApiBridge {
     String? deviceModel,
     String? deviceOs,
     String? appVersion,
-  }) => _invoke('apiAddSubscription', {
-    'type': type,
-    'token': token,
-    'deviceModel': deviceModel,
-    'deviceOs': deviceOs,
-    'appVersion': appVersion,
-  });
+  }) =>
+      _invoke('apiAddSubscription', {
+        'type': type,
+        'token': token,
+        'deviceModel': deviceModel,
+        'deviceOs': deviceOs,
+        'appVersion': appVersion,
+      });
 
   Future<void> updateTags(Map<String, dynamic> tags) =>
       _invoke('apiUpdateTags', {'tags': tags});
@@ -76,11 +77,12 @@ class ApiBridge {
     String messageId,
     String event, [
     Map<String, dynamic>? properties,
-  ]) => _invoke('apiReportReceipt', {
-    'messageId': messageId,
-    'event': event,
-    'properties': properties,
-  });
+  ]) =>
+      _invoke('apiReportReceipt', {
+        'messageId': messageId,
+        'event': event,
+        'properties': properties,
+      });
 
   Future<void> flushQueue() => _invoke('apiFlushQueue', null);
 

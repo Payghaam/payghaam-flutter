@@ -24,8 +24,8 @@ void configureAndroid(InstallProject project, InstallLog log) {
     appGradle = appGroovy;
   }
 
-  final appAlreadyWired =
-      appGradle != null && hasGoogleServicesPlugin(appGradle.readAsStringSync());
+  final appAlreadyWired = appGradle != null &&
+      hasGoogleServicesPlugin(appGradle.readAsStringSync());
 
   if (appAlreadyWired) {
     log.ok('Google services plugin is applied');
