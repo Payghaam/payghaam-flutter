@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.1
 
 * Live Activities (iOS): plugin forwards push-wake to payghaam-ios
   (`handleRemoteNotification` → token refresh); Dart
@@ -8,6 +8,8 @@
 * Sessions: send `session_start` on cold start and when the app returns to the
   foreground after ≥30s in the background (OneSignal-style). Identify without
   that ping no longer counts as a session.
+* Commit Flutter 3.47 `analysis_options` platform excludes so publish CI
+  stays on a clean git tree after `flutter pub get`.
 
 ## 0.2.0
 
