@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-# platform :ios, '13.0'
+platform :ios, '15.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -30,12 +30,7 @@ flutter_ios_podfile_setup
 target 'Runner' do
   use_frameworks!
 
-  # Canonical native SDK — payghaam_flutter's podspec depends on 'Payghaam'
-  # by name, now resolved from the public CocoaPods trunk (published as
-  # `Payghaam`, source: github.com/payghaam/payghaam-ios) rather than a
-  # local :path entry, since this is no longer in the same monorepo as
-  # sdks/ios.
-
+  pod 'Payghaam', :path => '/Users/abdulmoeed/Documents/GitHub/payghaam-ios'
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
     inherit! :search_paths

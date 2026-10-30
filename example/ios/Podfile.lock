@@ -1,0 +1,35 @@
+PODS:
+  - Flutter (1.0.0)
+  - Payghaam (0.1.5)
+  - payghaam_flutter (0.2.2):
+    - Flutter
+    - Payghaam (>= 0.1.5)
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - Payghaam (from `/Users/abdulmoeed/Documents/GitHub/payghaam-ios`)
+  - payghaam_flutter (from `.symlinks/plugins/payghaam_flutter/ios`)
+  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  Payghaam:
+    :path: "/Users/abdulmoeed/Documents/GitHub/payghaam-ios"
+  payghaam_flutter:
+    :path: ".symlinks/plugins/payghaam_flutter/ios"
+  shared_preferences_foundation:
+    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
+
+SPEC CHECKSUMS:
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  Payghaam: b4234601e5f52b14f286ea0e27b2efc80a49e34a
+  payghaam_flutter: fb5e02b46808093a2297388ccaf3d1ac08ddddd7
+  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
+
+PODFILE CHECKSUM: 9f35b0be05cf47f24dfd663549761684e6e582bd
+
+COCOAPODS: 1.16.2

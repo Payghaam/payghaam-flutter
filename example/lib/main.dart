@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:payghaam_flutter/payghaam_flutter.dart';
 import 'package:flutter/material.dart';
@@ -32,11 +33,12 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
   }
 
   Future<void> _initialize() async {
+    final baseUrl = Platform.isAndroid ? 'http://10.0.2.2:4000' : 'http://127.0.0.1:4000';
     await Payghaam.instance.initialize(
-      const PayghaamConfig(
-        appId: 'YOUR_PROJECT_ID',
-        apiKey: 'ek_client_...',
-        baseUrl: 'https://api.yourhost.com',
+      PayghaamConfig(
+        appId: 'cmqy0h7a8000xfcypq66nw18d',
+        apiKey: 'ek_client_simulator_test_key_456',
+        baseUrl: baseUrl,
         debug: true,
       ),
     );
@@ -63,6 +65,14 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
       'source': 'example_app',
     });
     setState(() => _status = 'Tracked example_tap event');
+  }
+
+  Future<void> _addTags() async {
+    await Payghaam.instance.user.addTags({
+      'tier': 'pro',
+      'device_type': Platform.isAndroid ? 'android' : 'ios',
+    });
+    setState(() => _status = 'Added debounced tags (tier=pro)');
   }
 
   Future<void> _startLiveActivity() async {
@@ -130,6 +140,11 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
               FilledButton(
                 onPressed: _initialized ? _trackEvent : null,
                 child: const Text('Track event'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: _initialized ? _addTags : null,
+                child: const Text('Add Tags (Debounced)'),
               ),
               const SizedBox(height: 16),
               const Text(

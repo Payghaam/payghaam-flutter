@@ -67,8 +67,14 @@ class PayghaamFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     when (call.method) {
       "requestPermission" -> requestPermission(result)
       "registerForRemoteNotifications" -> result.success(null)
-      "getToken" -> FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-        result.success(if (task.isSuccessful) task.result else null)
+      "getToken" -> {
+        try {
+          FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            result.success(if (task.isSuccessful) task.result else null)
+          }
+        } catch (_: Exception) {
+          result.success(null)
+        }
       }
       "getInitialNotification" -> {
         result.success(initialNotification)

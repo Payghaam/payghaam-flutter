@@ -22,7 +22,7 @@ let package = Package(
         // via payghaam_flutter.podspec) resolves the equivalent 'Payghaam' pod
         // through the consuming app's Podfile instead.
         // Live Activities APIs require 0.1.4+.
-        .package(url: "https://github.com/payghaam/payghaam-ios.git", from: "0.1.5"),
+        .package(url: "https://github.com/payghaam/payghaam-ios.git", from: "0.1.6"),
     ],
     targets: [
         .target(
