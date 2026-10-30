@@ -1,0 +1,107 @@
+# Docs follow-up
+#
+# Product docs live in Payghaam/payghaam-mono. This workflow:
+#   - comments on PRs here (no extra secret)
+#   - optionally repository_dispatch-es payghaam-mono on push to main
+#     if org/repo secret DOCS_DISPATCH_TOKEN is set (Actions: write on mono).
+# The mono cron still clones this public repo weekly without that token.
+
+name: Docs follow-up
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+concurrency:
+  group: docs-follow-up-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  comment:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Diff vs base and comment if docs likely lag
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          PR: ${{ github.event.pull_request.number }}
+          DOCS: https://github.com/Payghaam/payghaam-mono/blob/main/apps/dashboard/app/(docs)/docs
+        run: |
+          set -euo pipefail
+          FILES="$(git diff --name-only "${BASE}...${HEAD}" || true)"
+          echo "$FILES"
+          HINTS=""
+
+          add_hint() { HINTS="${HINTS}
+          $1"; }
+
+          if echo "$FILES" | grep -Eq '^(cli/|bin/install\.dart)'; then
+            add_hint "- [Flutter overview]($DOCS/sdk/flutter/page.tsx) — \`dart run payghaam_flutter:install\`"
+            add_hint "- [iOS setup]($DOCS/sdk/flutter/ios/page.tsx)"
+            add_hint "- [Android setup]($DOCS/sdk/flutter/android/page.tsx)"
+          fi
+          if echo "$FILES" | grep -Eq '^(ios_extension/|IOS_SETUP\.md|cli/ios\.dart|cli/plist\.dart|cli/podfile\.dart|cli/pbxproj\.dart)'; then
+            add_hint "- [Flutter iOS setup]($DOCS/sdk/flutter/ios/page.tsx) — NSE (\`PayghaamNSE\`), App Group, inlined NotificationService.swift"
+            add_hint "- [Rich notifications]($DOCS/channels/rich-notifications/page.tsx)"
+          fi
+          if echo "$FILES" | grep -Eq '^(android/|ANDROID_SETUP\.md|cli/android\.dart|cli/gradle\.dart)'; then
+            add_hint "- [Flutter Android setup]($DOCS/sdk/flutter/android/page.tsx)"
+            add_hint "- [Push (APNs & FCM)]($DOCS/channels/push/page.tsx)"
+          fi
+          if echo "$FILES" | grep -Eq '^(lib/src/(config|payghaam|api_client|api_bridge)\.dart|lib/payghaam_flutter\.dart)'; then
+            add_hint "- [Flutter overview]($DOCS/sdk/flutter/page.tsx) — \`PayghaamConfig\`, \`baseUrl: https://api.payghaam.com\`"
+          fi
+
+          if [ -z "$HINTS" ]; then
+            echo "No docs-mapped paths in this diff."
+            exit 0
+          fi
+
+          BODY="$(cat <<EOF
+          <!-- docs-follow-up-bot -->
+          ## Docs follow-up
+
+          These SDK changes likely need a matching update in **payghaam-mono** (dashboard docs). The mono repo clones this public repo on a weekly schedule and can open the docs PR there — or set \`DOCS_DISPATCH_TOKEN\` to ping it on merge.
+
+          $HINTS
+
+          _Ignore this if the change is an internal refactor with no setup/API contract change._
+          EOF
+          )"
+
+          EXISTING="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" \
+            --jq '[.[] | select(.body | contains("docs-follow-up-bot")) | .id] | first // empty')"
+          if [ -n "${EXISTING:-}" ]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${EXISTING}" -f body="$BODY"
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" -f body="$BODY"
+          fi
+
+  ping-mono:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify payghaam-mono docs watcher
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "No DOCS_DISPATCH_TOKEN — weekly poll on payghaam-mono will pick this up."
+            exit 0
+          fi
+          gh api repos/Payghaam/payghaam-mono/dispatches --input - <<EOF
+          {"event_type":"sdk-docs","client_payload":{"repo":"${GITHUB_REPOSITORY}","sha":"${GITHUB_SHA}","ref":"${GITHUB_REF_NAME}"}}
+          EOF
