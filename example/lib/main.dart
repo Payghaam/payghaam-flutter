@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:payghaam_flutter/payghaam_flutter.dart';
 import 'package:flutter/material.dart';
 
@@ -76,6 +77,20 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
   }
 
   Future<void> _startLiveActivity() async {
+    if (Platform.isAndroid) {
+      await const MethodChannel('payghaam/methods').invokeMethod('simulateLiveUpdate', {
+        'liveId': 'order_4821',
+        'event': 'start',
+        'progress': '25',
+        'title': 'Order #4821 • Preparing',
+        'body': 'Restaurant is preparing your order',
+      });
+      setState(() {
+        _localActivityId = 'order_4821';
+        _status = 'Android Live Update started (25% progress)';
+      });
+      return;
+    }
     final id = await PayghaamLiveActivities.startActivity(
       orderId: '4821',
       stage: 'picked_up',
@@ -90,6 +105,17 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
   }
 
   Future<void> _updateLiveActivity() async {
+    if (Platform.isAndroid) {
+      await const MethodChannel('payghaam/methods').invokeMethod('simulateLiveUpdate', {
+        'liveId': 'order_4821',
+        'event': 'update',
+        'progress': '75',
+        'title': 'Order #4821 • On the way',
+        'body': 'Driver is 5 mins away',
+      });
+      setState(() => _status = 'Android Live Update updated (75% progress)');
+      return;
+    }
     final ok = await PayghaamLiveActivities.updateActivity(
       activityId: _localActivityId,
       orderId: '4821',
@@ -100,6 +126,17 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
   }
 
   Future<void> _endLiveActivity() async {
+    if (Platform.isAndroid) {
+      await const MethodChannel('payghaam/methods').invokeMethod('simulateLiveUpdate', {
+        'liveId': 'order_4821',
+        'event': 'end',
+      });
+      setState(() {
+        _localActivityId = null;
+        _status = 'Android Live Update ended (dismissed)';
+      });
+      return;
+    }
     final ok = await PayghaamLiveActivities.endActivity(
       activityId: _localActivityId,
       orderId: '4821',
@@ -147,9 +184,11 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
                 child: const Text('Add Tags (Debounced)'),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Live Activities (iOS)',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              Text(
+                Platform.isAndroid
+                    ? 'Live Activities / Updates (Android)'
+                    : 'Live Activities (iOS)',
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               FilledButton(

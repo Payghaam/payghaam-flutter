@@ -86,6 +86,25 @@ class PayghaamFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         if (args != null) saveSharedConfig(context, args)
         result.success(null)
       }
+      "simulateLiveUpdate" -> {
+        val liveId = args?.get("liveId") as? String ?: "order_4821"
+        val event = args?.get("event") as? String ?: "update"
+        val progress = args?.get("progress") as? String ?: "50"
+        val title = args?.get("title") as? String ?: "Order #$liveId"
+        val body = args?.get("body") as? String ?: "Delivery status update"
+        val data = mapOf(
+          "ek_live_id" to liveId,
+          "ek_live_event" to event,
+          "ek_live_progress" to progress,
+          "title" to title,
+          "body" to body,
+          "ek_url" to "myapp://orders/$liveId"
+        )
+        val builder = com.google.firebase.messaging.RemoteMessage.Builder("payghaam@test")
+        data.forEach { (k, v) -> builder.addData(k, v) }
+        Payghaam.handleRemoteMessage(context, builder.build())
+        result.success(true)
+      }
       // ── Cross-platform API bridge (DESIGN.md §4.5) ────────
       "apiSync" -> {
         val apiKey = args?.get("apiKey") as? String
