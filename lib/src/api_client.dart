@@ -116,7 +116,8 @@ class ApiClient {
     String? appVersion,
     String? sdk,
   }) {
-    return _post('/users/$externalId/subscriptions', {
+    return _post('/subscriptions', {
+      'externalId': externalId,
       'type': type.wire,
       'token': token,
       if (deviceModel != null) 'deviceModel': deviceModel,
@@ -130,7 +131,10 @@ class ApiClient {
     String externalId,
     Map<String, dynamic> tags,
   ) {
-    return _put('/users/$externalId/tags', {'tags': tags});
+    return _put('/tags', {
+      'externalId': externalId,
+      'tags': tags,
+    });
   }
 
   Future<Map<String, dynamic>> track({
