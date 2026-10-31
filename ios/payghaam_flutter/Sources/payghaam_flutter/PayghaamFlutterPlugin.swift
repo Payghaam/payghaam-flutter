@@ -102,6 +102,24 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
     case "setSharedConfig":
       if let args = call.arguments as? [String: Any] { saveSharedConfig(args) }
       result(nil)
+    case "simulateCampaignPush":
+      let args = call.arguments as? [String: Any]
+      let title = args?["title"] as? String ?? "Special Campaign"
+      let body = args?["body"] as? String ?? "Tap to open browser"
+      let url = args?["url"] as? String ?? "https://example.com"
+      let content = UNMutableNotificationContent()
+      content.title = title
+      content.body = body
+      content.sound = .default
+      content.userInfo = [
+        "ek_url": url,
+        "ek_message_id": "msg_sim_\(Date().timeIntervalSince1970)"
+      ]
+      let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+      let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+      UNUserNotificationCenter.current().add(request) { _ in
+        result(true)
+      }
 
     // ── Live Activities (thin wrappers over payghaam-ios) ──
     case "refresh":

@@ -105,6 +105,22 @@ class PayghaamFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         Payghaam.handleRemoteMessage(context, builder.build())
         result.success(true)
       }
+      "simulateCampaignPush" -> {
+        val title = args?.get("title") as? String ?: "Exclusive Promo"
+        val body = args?.get("body") as? String ?: "Tap to visit our website"
+        val url = args?.get("url") as? String ?: "https://example.com"
+        val messageId = "msg_${System.currentTimeMillis()}"
+        val data = mapOf(
+          "title" to title,
+          "body" to body,
+          "ek_url" to url,
+          "ek_message_id" to messageId,
+        )
+        val builder = com.google.firebase.messaging.RemoteMessage.Builder("payghaam@campaign")
+        data.forEach { (k, v) -> builder.addData(k, v) }
+        Payghaam.handleRemoteMessage(context, builder.build())
+        result.success(true)
+      }
       // ── Cross-platform API bridge (DESIGN.md §4.5) ────────
       "apiSync" -> {
         val apiKey = args?.get("apiKey") as? String

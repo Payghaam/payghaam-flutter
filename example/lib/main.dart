@@ -152,6 +152,22 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
     setState(() => _status = 'Called PayghaamLiveActivities.refresh()');
   }
 
+  Future<void> _simulateCampaignPush() async {
+    await const MethodChannel('payghaam/methods').invokeMethod('simulateCampaignPush', {
+      'title': 'Engagekaro Summer Sale',
+      'body': 'Tap here to see special discount!',
+      'url': 'https://engagekaro.com',
+    });
+    setState(() => _status = 'Campaign push posted with ek_url=https://engagekaro.com');
+  }
+
+  Future<void> _openBrowserDirect() async {
+    final opened = await const MethodChannel('payghaam/methods').invokeMethod<bool>('openUrl', {
+      'url': 'https://engagekaro.com',
+    });
+    setState(() => _status = opened == true ? 'Browser opened to https://engagekaro.com' : 'Failed to open browser');
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -182,6 +198,16 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
               FilledButton(
                 onPressed: _initialized ? _addTags : null,
                 child: const Text('Add Tags (Debounced)'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: _initialized ? _simulateCampaignPush : null,
+                child: const Text('Simulate Campaign Push (Deep Link)'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: _initialized ? _openBrowserDirect : null,
+                child: const Text('Direct Open Browser (Deep Link)'),
               ),
               const SizedBox(height: 16),
               Text(
