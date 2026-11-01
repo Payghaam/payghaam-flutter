@@ -34,7 +34,9 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
   }
 
   Future<void> _initialize() async {
-    final baseUrl = Platform.isAndroid ? 'http://10.0.2.2:4000' : 'http://127.0.0.1:4000';
+    final baseUrl = Platform.isAndroid
+        ? 'http://10.0.2.2:4000'
+        : 'http://127.0.0.1:4000';
     await Payghaam.instance.initialize(
       PayghaamConfig(
         appId: 'cmqy0h7a8000xfcypq66nw18d',
@@ -78,7 +80,9 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
 
   Future<void> _startLiveActivity() async {
     if (Platform.isAndroid) {
-      await const MethodChannel('payghaam/methods').invokeMethod('simulateLiveUpdate', {
+      await const MethodChannel(
+        'payghaam/methods',
+      ).invokeMethod('simulateLiveUpdate', {
         'liveId': 'order_4821',
         'event': 'start',
         'progress': '25',
@@ -106,7 +110,9 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
 
   Future<void> _updateLiveActivity() async {
     if (Platform.isAndroid) {
-      await const MethodChannel('payghaam/methods').invokeMethod('simulateLiveUpdate', {
+      await const MethodChannel(
+        'payghaam/methods',
+      ).invokeMethod('simulateLiveUpdate', {
         'liveId': 'order_4821',
         'event': 'update',
         'progress': '75',
@@ -127,10 +133,10 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
 
   Future<void> _endLiveActivity() async {
     if (Platform.isAndroid) {
-      await const MethodChannel('payghaam/methods').invokeMethod('simulateLiveUpdate', {
-        'liveId': 'order_4821',
-        'event': 'end',
-      });
+      await const MethodChannel('payghaam/methods').invokeMethod(
+        'simulateLiveUpdate',
+        {'liveId': 'order_4821', 'event': 'end'},
+      );
       setState(() {
         _localActivityId = null;
         _status = 'Android Live Update ended (dismissed)';
@@ -153,19 +159,27 @@ class _PayghaamExampleAppState extends State<PayghaamExampleApp> {
   }
 
   Future<void> _simulateCampaignPush() async {
-    await const MethodChannel('payghaam/methods').invokeMethod('simulateCampaignPush', {
+    await const MethodChannel(
+      'payghaam/methods',
+    ).invokeMethod('simulateCampaignPush', {
       'title': 'Engagekaro Summer Sale',
       'body': 'Tap here to see special discount!',
       'url': 'https://engagekaro.com',
     });
-    setState(() => _status = 'Campaign push posted with ek_url=https://engagekaro.com');
+    setState(
+      () => _status = 'Campaign push posted with ek_url=https://engagekaro.com',
+    );
   }
 
   Future<void> _openBrowserDirect() async {
-    final opened = await const MethodChannel('payghaam/methods').invokeMethod<bool>('openUrl', {
-      'url': 'https://engagekaro.com',
-    });
-    setState(() => _status = opened == true ? 'Browser opened to https://engagekaro.com' : 'Failed to open browser');
+    final opened = await const MethodChannel(
+      'payghaam/methods',
+    ).invokeMethod<bool>('openUrl', {'url': 'https://engagekaro.com'});
+    setState(
+      () => _status = opened == true
+          ? 'Browser opened to https://engagekaro.com'
+          : 'Failed to open browser',
+    );
   }
 
   @override
