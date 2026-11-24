@@ -169,6 +169,38 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
           result(Self.apiError(error))
         }
       }
+    case "apiRemoveAlias":
+      guard let args = call.arguments as? [String: Any],
+            let label = args["label"] as? String else {
+        result(nil)
+        return
+      }
+      Task {
+        do {
+          try await Payghaam.shared.bridgeRemoveAlias(label)
+          result(nil)
+        } catch {
+          result(Self.apiError(error))
+        }
+      }
+    case "apiOptOut":
+      Task {
+        do {
+          try await Payghaam.shared.bridgeOptOut()
+          result(nil)
+        } catch {
+          result(Self.apiError(error))
+        }
+      }
+    case "apiOptIn":
+      Task {
+        do {
+          try await Payghaam.shared.bridgeOptIn()
+          result(nil)
+        } catch {
+          result(Self.apiError(error))
+        }
+      }
     case "apiIdentify":
       let ctx = (call.arguments as? [String: Any])?["deviceContext"] as? [String: Any]
       Task {

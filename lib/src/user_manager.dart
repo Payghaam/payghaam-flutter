@@ -46,8 +46,12 @@ class UserManager {
     }
   }
 
-  /// Remove tags by setting them to null (backend merges).
+  /// Remove a tag by setting it to null (backend merges).
   Future<void> removeTag(String key) => addTags({key: null});
+
+  /// Remove multiple tags by setting them to null.
+  Future<void> removeTags(List<String> keys) =>
+      addTags({for (final k in keys) k: null});
 
   /// Add an email subscription for the current user.
   Future<void> addEmail(String email) async {
@@ -153,6 +157,25 @@ class UserManager {
         anonymousId: _anonymousId(),
         aliases: aliases,
       );
+    }
+  }
+
+  /// Remove a custom alias by label.
+  Future<void> removeAlias(String label) => removeAliases([label]);
+
+  /// Remove multiple custom aliases by label.
+  Future<void> removeAliases(List<String> labels) async {
+    if (!_canSend()) return;
+    for (final label in labels) {
+      try {
+        await _bridge.removeAlias(label);
+      } on MissingPluginException {
+        await _api.removeAlias(
+          externalId: _externalId(),
+          anonymousId: _anonymousId(),
+          label: label,
+        );
+      }
     }
   }
 }

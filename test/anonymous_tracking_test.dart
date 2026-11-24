@@ -68,7 +68,11 @@ void main() {
     expect(languageSet, equals('ar'));
 
     await user.addTag('tier', 'free');
+    await user.removeTag('tier');
+    await user.removeTags(['tier', 'score']);
     await user.addAlias('loyalty_id', 'loyalty_999');
+    await user.removeAlias('loyalty_id');
+    await user.removeAliases(['loyalty_id', 'crm_id']);
     await user.removeEmail('user@example.com');
     await user.removeSms('+97412345678');
   });

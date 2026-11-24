@@ -151,6 +151,16 @@ class PayghaamFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         val aliases = args?.get("aliases") as? Map<String, String> ?: emptyMap()
         Payghaam.bridgeAddAliases(aliases)
       }
+      "apiRemoveAlias" -> bridgeCall(result) {
+        val label = args?.get("label") as? String ?: return@bridgeCall
+        Payghaam.bridgeRemoveAlias(label)
+      }
+      "apiOptOut" -> bridgeCall(result) {
+        Payghaam.bridgeOptOut()
+      }
+      "apiOptIn" -> bridgeCall(result) {
+        Payghaam.bridgeOptIn()
+      }
       "apiIdentify" -> bridgeCall(result) {
         @Suppress("UNCHECKED_CAST")
         val ctx = args?.get("deviceContext") as? Map<String, Any?>

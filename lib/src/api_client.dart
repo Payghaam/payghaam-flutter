@@ -162,6 +162,18 @@ class ApiClient {
     });
   }
 
+  Future<Map<String, dynamic>> removeAlias({
+    String? externalId,
+    String? anonymousId,
+    required String label,
+  }) {
+    return _post('/aliases/remove', {
+      if (externalId != null) 'externalId': externalId,
+      if (anonymousId != null) 'anonymousId': anonymousId,
+      'label': label,
+    });
+  }
+
   Future<Map<String, dynamic>> track({
     required String name,
     String? externalId,
@@ -182,6 +194,10 @@ class ApiClient {
 
   Future<Map<String, dynamic>> optOut(SubscriptionType type, String token) {
     return _post('/opt-out', {'type': type.wire, 'token': token});
+  }
+
+  Future<Map<String, dynamic>> optIn(SubscriptionType type, String token) {
+    return _post('/opt-in', {'type': type.wire, 'token': token});
   }
 
   Future<Map<String, dynamic>> removeSubscription({

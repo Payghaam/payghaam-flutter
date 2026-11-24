@@ -89,6 +89,13 @@ class ApiBridge {
   Future<void> addAliases(Map<String, String> aliases) =>
       _invoke('apiAddAliases', {'aliases': aliases});
 
+  Future<void> removeAlias(String label) =>
+      _invoke('apiRemoveAlias', {'label': label});
+
+  Future<void> optOut() => _invoke('apiOptOut', null);
+
+  Future<void> optIn() => _invoke('apiOptIn', null);
+
   Future<void> track(String name, [Map<String, dynamic>? properties]) =>
       _invoke('apiTrack', {'name': name, 'properties': properties});
 

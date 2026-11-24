@@ -37,6 +37,7 @@ class Payghaam with WidgetsBindingObserver {
   bool _consentGiven = false;
   String? _externalId;
   late String _anonymousId;
+  String? _registeredToken;
   String? _language;
   String? _pendingPushToken; // captured before login completes
   String? _pushPermission; // granted | denied | unknown
@@ -61,6 +62,18 @@ class Payghaam with WidgetsBindingObserver {
   /// Stable anonymous identifier generated for this install.
   String get anonymousId => _anonymousId;
 
+  /// Returns the current anonymous ID.
+  String getAnonymousId() => _anonymousId;
+
+  /// Returns the current external ID, or null if unauthenticated.
+  String? get externalId => _externalId;
+
+  /// Returns the current external ID, or null if unauthenticated.
+  String? getExternalId() => _externalId;
+
+  /// Returns the device push token, or null if not yet registered.
+  String? get pushToken => _registeredToken;
+
   /// Current language override.
   String? get language => _language;
 
@@ -74,6 +87,43 @@ class Payghaam with WidgetsBindingObserver {
   /// Add custom aliases map.
   Future<void> addAliases(Map<String, String> aliases) =>
       _user.addAliases(aliases);
+
+  /// Remove a custom alias.
+  Future<void> removeAlias(String label) => _user.removeAlias(label);
+
+  /// Remove multiple custom aliases.
+  Future<void> removeAliases(List<String> labels) =>
+      _user.removeAliases(labels);
+
+  /// Remove a profile tag.
+  Future<void> removeTag(String key) => _user.removeTag(key);
+
+  /// Remove multiple profile tags.
+  Future<void> removeTags(List<String> keys) => _user.removeTags(keys);
+
+  /// Opt out of push notifications.
+  Future<void> optOut() async {
+    if (!_canSend) return;
+    try {
+      await _bridge.optOut();
+    } on MissingPluginException {
+      if (_registeredToken != null) {
+        await _api.optOut(_push.subscriptionType, _registeredToken!);
+      }
+    }
+  }
+
+  /// Opt in to push notifications.
+  Future<void> optIn() async {
+    if (!_canSend) return;
+    try {
+      await _bridge.optIn();
+    } on MissingPluginException {
+      if (_registeredToken != null) {
+        await _api.optIn(_push.subscriptionType, _registeredToken!);
+      }
+    }
+  }
 
   /// Emits the full push payload whenever the user taps a notification — your
   /// custom `data` keys plus Payghaam's own `ek_*` keys.
@@ -441,6 +491,7 @@ class Payghaam with WidgetsBindingObserver {
     String token, {
     SubscriptionType? platform,
   }) async {
+    _registeredToken = token;
     if (!_canSend) return;
     try {
       final ctx = await DeviceContext.collect(pushPermission: _pushPermission);
