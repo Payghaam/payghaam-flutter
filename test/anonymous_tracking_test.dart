@@ -69,5 +69,7 @@ void main() {
 
     await user.addTag('tier', 'free');
     await user.addAlias('loyalty_id', 'loyalty_999');
+    await user.removeEmail('user@example.com');
+    await user.removeSms('+97412345678');
   });
 }

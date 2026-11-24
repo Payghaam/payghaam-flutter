@@ -167,6 +167,14 @@ class PayghaamFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
           args["appVersion"] as? String,
         )
       }
+      "apiRemoveSubscription" -> bridgeCall(result) {
+        val type = args?.get("type") as? String ?: return@bridgeCall
+        val token = args["token"] as? String ?: return@bridgeCall
+        Payghaam.bridgeRemoveSubscription(
+          SubscriptionType.valueOf(type),
+          token,
+        )
+      }
       "apiUpdateTags" -> bridgeCall(result) {
         @Suppress("UNCHECKED_CAST")
         val tags = args?.get("tags") as? Map<String, Any?> ?: emptyMap()

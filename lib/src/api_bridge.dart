@@ -71,6 +71,15 @@ class ApiBridge {
         'appVersion': appVersion,
       });
 
+  Future<void> removeSubscription({
+    required String type,
+    required String token,
+  }) =>
+      _invoke('apiRemoveSubscription', {
+        'type': type,
+        'token': token,
+      });
+
   Future<void> updateTags(Map<String, dynamic> tags) =>
       _invoke('apiUpdateTags', {'tags': tags});
 

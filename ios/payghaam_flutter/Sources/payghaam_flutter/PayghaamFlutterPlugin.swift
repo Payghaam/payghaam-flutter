@@ -195,6 +195,22 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
           result(Self.apiError(error))
         }
       }
+    case "apiRemoveSubscription":
+      guard let args = call.arguments as? [String: Any],
+            let typeStr = args["type"] as? String,
+            let type = SubscriptionType(rawValue: typeStr),
+            let token = args["token"] as? String else {
+        result(nil)
+        return
+      }
+      Task {
+        do {
+          try await Payghaam.shared.bridgeRemoveSubscription(type: type, token: token)
+          result(nil)
+        } catch {
+          result(Self.apiError(error))
+        }
+      }
     case "apiUpdateTags":
       let raw = (call.arguments as? [String: Any])?["tags"] as? [String: Any] ?? [:]
       Task {

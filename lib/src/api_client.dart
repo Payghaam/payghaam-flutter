@@ -184,6 +184,20 @@ class ApiClient {
     return _post('/opt-out', {'type': type.wire, 'token': token});
   }
 
+  Future<Map<String, dynamic>> removeSubscription({
+    required SubscriptionType type,
+    required String token,
+    String? externalId,
+    String? anonymousId,
+  }) {
+    return _post('/subscriptions/remove', {
+      'type': type.wire,
+      'token': token,
+      if (externalId != null) 'externalId': externalId,
+      if (anonymousId != null) 'anonymousId': anonymousId,
+    });
+  }
+
   /// Report a delivery/engagement receipt (delivered | opened | clicked).
   Future<Map<String, dynamic>> reportReceipt({
     required String messageId,

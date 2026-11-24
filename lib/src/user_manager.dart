@@ -85,6 +85,42 @@ class UserManager {
     }
   }
 
+  /// Remove an email subscription for the current user.
+  Future<void> removeEmail(String email) async {
+    if (!_canSend()) return;
+    try {
+      await _bridge.removeSubscription(
+        type: SubscriptionType.email.wire,
+        token: email,
+      );
+    } on MissingPluginException {
+      await _api.removeSubscription(
+        externalId: _externalId(),
+        anonymousId: _anonymousId(),
+        type: SubscriptionType.email,
+        token: email,
+      );
+    }
+  }
+
+  /// Remove an SMS subscription for the current user.
+  Future<void> removeSms(String phoneE164) async {
+    if (!_canSend()) return;
+    try {
+      await _bridge.removeSubscription(
+        type: SubscriptionType.sms.wire,
+        token: phoneE164,
+      );
+    } on MissingPluginException {
+      await _api.removeSubscription(
+        externalId: _externalId(),
+        anonymousId: _anonymousId(),
+        type: SubscriptionType.sms,
+        token: phoneE164,
+      );
+    }
+  }
+
   /// Set custom language override for this user.
   Future<void> setLanguage(String? language) async {
     if (!_canSend()) return;
