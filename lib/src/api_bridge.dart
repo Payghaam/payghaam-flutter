@@ -26,6 +26,8 @@ class ApiBridge {
     required String baseUrl,
     String? externalId,
     String? identityHash,
+    String? anonymousId,
+    String? language,
   }) async {
     try {
       await _methods.invokeMethod<void>('apiSync', {
@@ -33,6 +35,8 @@ class ApiBridge {
         'baseUrl': baseUrl,
         'externalId': externalId,
         'identityHash': identityHash,
+        'anonymousId': anonymousId,
+        'language': language,
       });
     } on MissingPluginException {
       // No native plugin (web/desktop) — nothing to mirror; ApiClient carries
@@ -69,6 +73,12 @@ class ApiBridge {
 
   Future<void> updateTags(Map<String, dynamic> tags) =>
       _invoke('apiUpdateTags', {'tags': tags});
+
+  Future<void> setLanguage(String? language) =>
+      _invoke('apiSetLanguage', {'language': language});
+
+  Future<void> addAliases(Map<String, String> aliases) =>
+      _invoke('apiAddAliases', {'aliases': aliases});
 
   Future<void> track(String name, [Map<String, dynamic>? properties]) =>
       _invoke('apiTrack', {'name': name, 'properties': properties});

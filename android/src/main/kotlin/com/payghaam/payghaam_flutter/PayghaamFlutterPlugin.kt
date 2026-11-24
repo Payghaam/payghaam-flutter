@@ -132,6 +132,8 @@ class PayghaamFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
             baseUrl = baseUrl,
             externalId = args["externalId"] as? String,
             identityHash = args["identityHash"] as? String,
+            anonymousId = args["anonymousId"] as? String,
+            language = args["language"] as? String,
           )
         }
         result.success(null)
@@ -139,6 +141,15 @@ class PayghaamFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
       "apiClearIdentity" -> {
         Payghaam.clearBridgeIdentity(context)
         result.success(null)
+      }
+      "apiSetLanguage" -> bridgeCall(result) {
+        val lang = args?.get("language") as? String
+        Payghaam.bridgeSetLanguage(lang)
+      }
+      "apiAddAliases" -> bridgeCall(result) {
+        @Suppress("UNCHECKED_CAST")
+        val aliases = args?.get("aliases") as? Map<String, String> ?: emptyMap()
+        Payghaam.bridgeAddAliases(aliases)
       }
       "apiIdentify" -> bridgeCall(result) {
         @Suppress("UNCHECKED_CAST")

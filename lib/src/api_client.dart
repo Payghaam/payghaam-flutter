@@ -94,12 +94,18 @@ class ApiClient {
   /// Create/identify a user. Returns the subscriber payload.
   Future<Map<String, dynamic>> identify({
     String? externalId,
+    String? anonymousId,
+    String? language,
+    List<Map<String, String>>? aliases,
     Map<String, dynamic>? tags,
     List<Map<String, dynamic>>? subscriptions,
     Map<String, dynamic>? deviceContext,
   }) {
     return _post('/users', {
       if (externalId != null) 'externalId': externalId,
+      if (anonymousId != null) 'anonymousId': anonymousId,
+      if (language != null) 'language': language,
+      if (aliases != null) 'aliases': aliases,
       if (tags != null) 'tags': tags,
       if (subscriptions != null) 'subscriptions': subscriptions,
       if (deviceContext != null) ...deviceContext,
@@ -108,7 +114,8 @@ class ApiClient {
 
   /// Register a channel subscription (push token / email / phone) for a user.
   Future<Map<String, dynamic>> addSubscription({
-    required String externalId,
+    String? externalId,
+    String? anonymousId,
     required SubscriptionType type,
     required String token,
     String? deviceModel,
@@ -117,7 +124,8 @@ class ApiClient {
     String? sdk,
   }) {
     return _post('/subscriptions', {
-      'externalId': externalId,
+      if (externalId != null) 'externalId': externalId,
+      if (anonymousId != null) 'anonymousId': anonymousId,
       'type': type.wire,
       'token': token,
       if (deviceModel != null) 'deviceModel': deviceModel,
@@ -127,19 +135,37 @@ class ApiClient {
     });
   }
 
-  Future<Map<String, dynamic>> updateTags(
-    String externalId,
-    Map<String, dynamic> tags,
-  ) {
+  Future<Map<String, dynamic>> updateTags({
+    String? externalId,
+    String? anonymousId,
+    required Map<String, dynamic> tags,
+  }) {
     return _put('/tags', {
-      'externalId': externalId,
+      if (externalId != null) 'externalId': externalId,
+      if (anonymousId != null) 'anonymousId': anonymousId,
       'tags': tags,
+    });
+  }
+
+  Future<Map<String, dynamic>> addAliases({
+    String? externalId,
+    String? anonymousId,
+    required Map<String, String> aliases,
+  }) {
+    final list = aliases.entries
+        .map((e) => {'label': e.key, 'value': e.value})
+        .toList();
+    return _post('/users', {
+      if (externalId != null) 'externalId': externalId,
+      if (anonymousId != null) 'anonymousId': anonymousId,
+      'aliases': list,
     });
   }
 
   Future<Map<String, dynamic>> track({
     required String name,
     String? externalId,
+    String? anonymousId,
     Map<String, dynamic>? properties,
     String? idempotencyKey,
     Map<String, dynamic>? deviceContext,
@@ -147,6 +173,7 @@ class ApiClient {
     return _post('/events', {
       'name': name,
       if (externalId != null) 'externalId': externalId,
+      if (anonymousId != null) 'anonymousId': anonymousId,
       if (properties != null) 'properties': properties,
       if (idempotencyKey != null) 'idempotencyKey': idempotencyKey,
       if (deviceContext != null) ...deviceContext,

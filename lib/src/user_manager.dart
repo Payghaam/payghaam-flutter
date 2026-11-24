@@ -12,19 +12,20 @@ class UserManager {
   // (web/desktop — see api_bridge.dart).
   final ApiClient _api;
   final String? Function() _externalId;
+  final String Function() _anonymousId;
+  final String? Function() _language;
   final bool Function() _canSend;
+  final Future<void> Function(String? lang)? _onLanguageChanged;
 
-  UserManager(this._bridge, this._api, this._externalId, this._canSend);
-
-  String _requireExternalId() {
-    final id = _externalId();
-    if (id == null) {
-      throw StateError(
-        'Call Payghaam.login(externalId) before setting user data.',
-      );
-    }
-    return id;
-  }
+  UserManager(
+    this._bridge,
+    this._api,
+    this._externalId,
+    this._anonymousId,
+    this._language,
+    this._canSend, {
+    Future<void> Function(String? lang)? onLanguageChanged,
+  }) : _onLanguageChanged = onLanguageChanged;
 
   /// Set a single tag (key-value pair) on the current user for audience
   /// segmentation. Shorthand for `addTags({key: value})`.
@@ -34,11 +35,14 @@ class UserManager {
   /// segmentation. The backend merges these with any existing tags.
   Future<void> addTags(Map<String, Object?> tags) async {
     if (!_canSend()) return;
-    final externalId = _requireExternalId();
     try {
       await _bridge.updateTags(tags);
     } on MissingPluginException {
-      await _api.updateTags(externalId, tags);
+      await _api.updateTags(
+        externalId: _externalId(),
+        anonymousId: _anonymousId(),
+        tags: tags,
+      );
     }
   }
 
@@ -48,7 +52,6 @@ class UserManager {
   /// Add an email subscription for the current user.
   Future<void> addEmail(String email) async {
     if (!_canSend()) return;
-    final externalId = _requireExternalId();
     try {
       await _bridge.addSubscription(
         type: SubscriptionType.email.wire,
@@ -56,7 +59,8 @@ class UserManager {
       );
     } on MissingPluginException {
       await _api.addSubscription(
-        externalId: externalId,
+        externalId: _externalId(),
+        anonymousId: _anonymousId(),
         type: SubscriptionType.email,
         token: email,
       );
@@ -66,7 +70,6 @@ class UserManager {
   /// Add an SMS subscription for the current user.
   Future<void> addSms(String phoneE164) async {
     if (!_canSend()) return;
-    final externalId = _requireExternalId();
     try {
       await _bridge.addSubscription(
         type: SubscriptionType.sms.wire,
@@ -74,9 +77,45 @@ class UserManager {
       );
     } on MissingPluginException {
       await _api.addSubscription(
-        externalId: externalId,
+        externalId: _externalId(),
+        anonymousId: _anonymousId(),
         type: SubscriptionType.sms,
         token: phoneE164,
+      );
+    }
+  }
+
+  /// Set custom language override for this user.
+  Future<void> setLanguage(String? language) async {
+    if (!_canSend()) return;
+    if (_onLanguageChanged != null) {
+      await _onLanguageChanged!(language);
+    }
+    try {
+      await _bridge.setLanguage(language);
+    } on MissingPluginException {
+      await _api.identify(
+        externalId: _externalId(),
+        anonymousId: _anonymousId(),
+        language: language,
+      );
+    }
+  }
+
+  /// Add a custom alias label/value pair (e.g. loyalty_id, shopify_id).
+  Future<void> addAlias(String label, String value) =>
+      addAliases({label: value});
+
+  /// Add multiple custom aliases (label to value map).
+  Future<void> addAliases(Map<String, String> aliases) async {
+    if (!_canSend()) return;
+    try {
+      await _bridge.addAliases(aliases);
+    } on MissingPluginException {
+      await _api.addAliases(
+        externalId: _externalId(),
+        anonymousId: _anonymousId(),
+        aliases: aliases,
       );
     }
   }

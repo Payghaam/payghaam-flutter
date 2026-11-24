@@ -139,7 +139,9 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
             apiKey: apiKey,
             baseUrl: baseUrl,
             externalId: args?["externalId"] as? String,
-            identityHash: args?["identityHash"] as? String
+            identityHash: args?["identityHash"] as? String,
+            anonymousId: args?["anonymousId"] as? String,
+            language: args?["language"] as? String
           )
         }
       }
@@ -147,6 +149,26 @@ public class PayghaamFlutterPlugin: NSObject, FlutterPlugin, UNUserNotificationC
     case "apiClearIdentity":
       MainActor.assumeIsolated { Payghaam.shared.clearBridgeIdentity() }
       result(nil)
+    case "apiSetLanguage":
+      let lang = (call.arguments as? [String: Any])?["language"] as? String
+      Task {
+        do {
+          try await Payghaam.shared.bridgeSetLanguage(lang)
+          result(nil)
+        } catch {
+          result(Self.apiError(error))
+        }
+      }
+    case "apiAddAliases":
+      let aliases = (call.arguments as? [String: Any])?["aliases"] as? [String: String] ?? [:]
+      Task {
+        do {
+          try await Payghaam.shared.bridgeAddAliases(aliases)
+          result(nil)
+        } catch {
+          result(Self.apiError(error))
+        }
+      }
     case "apiIdentify":
       let ctx = (call.arguments as? [String: Any])?["deviceContext"] as? [String: Any]
       Task {

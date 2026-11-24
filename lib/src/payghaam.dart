@@ -36,6 +36,8 @@ class Payghaam with WidgetsBindingObserver {
   bool _initialized = false;
   bool _consentGiven = false;
   String? _externalId;
+  late String _anonymousId;
+  String? _language;
   String? _pendingPushToken; // captured before login completes
   String? _pushPermission; // granted | denied | unknown
   final SessionTracker _sessions = SessionTracker();
@@ -53,8 +55,25 @@ class Payghaam with WidgetsBindingObserver {
   /// the race against an app that does its own routing.
   static const Duration _openedHandlerGrace = Duration(milliseconds: 400);
 
-  /// User-scoped helpers (tags, email, SMS). Requires [login] first.
+  /// User-scoped helpers (tags, email, SMS).
   UserManager get user => _user;
+
+  /// Stable anonymous identifier generated for this install.
+  String get anonymousId => _anonymousId;
+
+  /// Current language override.
+  String? get language => _language;
+
+  /// Set language override.
+  Future<void> setLanguage(String? language) => _user.setLanguage(language);
+
+  /// Add custom alias label/value pair.
+  Future<void> addAlias(String label, String value) =>
+      _user.addAlias(label, value);
+
+  /// Add custom aliases map.
+  Future<void> addAliases(Map<String, String> aliases) =>
+      _user.addAliases(aliases);
 
   /// Emits the full push payload whenever the user taps a notification — your
   /// custom `data` keys plus Payghaam's own `ek_*` keys.
@@ -91,10 +110,23 @@ class Payghaam with WidgetsBindingObserver {
     _config = config;
     _api = ApiClient(config);
     _api.queue = OfflineQueue(_api.rawRequest);
-    _user = UserManager(_bridge, _api, () => _externalId, () => _canSend);
     if (push != null) _push = push;
 
     _externalId = await _storage.getExternalId();
+    _anonymousId = await _storage.getAnonymousId();
+    _language = await _storage.getLanguage();
+    _user = UserManager(
+      _bridge,
+      _api,
+      () => _externalId,
+      () => _anonymousId,
+      () => _language,
+      () => _canSend,
+      onLanguageChanged: (lang) async {
+        _language = lang;
+        await _storage.setLanguage(lang);
+      },
+    );
     _consentGiven = config.requireConsent ? await _storage.getConsent() : true;
     _initialized = true;
 
@@ -106,6 +138,8 @@ class Payghaam with WidgetsBindingObserver {
         apiKey: config.apiKey,
         baseUrl: config.baseUrl,
         externalId: _externalId,
+        anonymousId: _anonymousId,
+        language: _language,
       );
     } on MissingPluginException {
       // web/desktop — ApiClient holds config directly
@@ -125,10 +159,8 @@ class Payghaam with WidgetsBindingObserver {
       _reportError(e, 'getInitialNotification');
     }
 
-    if (_externalId != null) {
-      unawaited(
-          _syncDeviceProfile(sessionStart: _sessions.noteForegroundResume()));
-    }
+    unawaited(
+        _syncDeviceProfile(sessionStart: _sessions.noteForegroundResume()));
   }
 
   @override
@@ -143,7 +175,7 @@ class Payghaam with WidgetsBindingObserver {
     // bridge's queue and the HTTP-fallback queue may have accumulated items.
     unawaited(_bridge.flushQueue());
     unawaited(_api.queue?.flush());
-    if (!_canSend || _externalId == null) return;
+    if (!_canSend) return;
     if (!_sessions.noteForegroundResume()) return;
     unawaited(_syncDeviceProfile(sessionStart: true));
   }
@@ -160,7 +192,7 @@ class Payghaam with WidgetsBindingObserver {
   }
 
   Future<void> _doSyncDeviceProfile({bool sessionStart = false}) async {
-    if (!_canSend || _externalId == null) return;
+    if (!_canSend) return;
     try {
       final ctx = await DeviceContext.collect(
         sessionStart: false,
@@ -170,13 +202,22 @@ class Payghaam with WidgetsBindingObserver {
       try {
         await _bridge.identify(deviceContext: json);
       } on MissingPluginException {
-        await _api.identify(externalId: _externalId, deviceContext: json);
+        await _api.identify(
+          externalId: _externalId,
+          anonymousId: _anonymousId,
+          language: _language,
+          deviceContext: json,
+        );
       }
       if (sessionStart) {
         try {
           await _bridge.track(kSessionEventName);
         } on MissingPluginException {
-          await _api.track(name: kSessionEventName, externalId: _externalId);
+          await _api.track(
+            name: kSessionEventName,
+            externalId: _externalId,
+            anonymousId: _anonymousId,
+          );
         }
       }
     } catch (e) {
@@ -290,11 +331,34 @@ class Payghaam with WidgetsBindingObserver {
         baseUrl: _config.baseUrl,
         externalId: externalId,
         identityHash: identityHash,
+        anonymousId: _anonymousId,
+        language: _language,
       );
     } on MissingPluginException {
       // web/desktop
     }
     if (!_canSend) return;
+
+    // Explicitly link anonymous ID with external ID on backend
+    try {
+      final ctx = await DeviceContext.collect(
+        sessionStart: false,
+        pushPermission: _pushPermission,
+      );
+      final json = ctx.toJson();
+      try {
+        await _bridge.identify(deviceContext: json);
+      } on MissingPluginException {
+        await _api.identify(
+          externalId: externalId,
+          anonymousId: _anonymousId,
+          language: _language,
+          deviceContext: json,
+        );
+      }
+    } catch (e) {
+      _reportError(e, 'loginLink');
+    }
 
     // Network enrichment (push token + single identify with device context) runs in background.
     unawaited(_runPostLoginTasks());
@@ -321,6 +385,7 @@ class Payghaam with WidgetsBindingObserver {
     _externalId = null;
     _api.identityHash = null;
     await _storage.setExternalId(null);
+    _anonymousId = await _storage.resetAnonymousId();
     unawaited(_bridge.clearIdentity());
   }
 
@@ -337,6 +402,7 @@ class Payghaam with WidgetsBindingObserver {
         await _api.track(
           name: name,
           externalId: _externalId,
+          anonymousId: _anonymousId,
           properties: properties,
         );
       }
@@ -356,7 +422,7 @@ class Payghaam with WidgetsBindingObserver {
         if (token != null) await _registerPushToken(token);
         await _syncDeviceProfile();
       }());
-    } else if (_canSend && _externalId != null) {
+    } else if (_canSend) {
       unawaited(_syncDeviceProfile());
     }
     return granted;
@@ -376,10 +442,6 @@ class Payghaam with WidgetsBindingObserver {
     SubscriptionType? platform,
   }) async {
     if (!_canSend) return;
-    if (_externalId == null) {
-      _pendingPushToken = token; // register once the user logs in
-      return;
-    }
     try {
       final ctx = await DeviceContext.collect(pushPermission: _pushPermission);
       final type = platform ?? _push.subscriptionType;
@@ -396,7 +458,8 @@ class Payghaam with WidgetsBindingObserver {
         );
       } on MissingPluginException {
         await _api.addSubscription(
-          externalId: _externalId!,
+          externalId: _externalId,
+          anonymousId: _anonymousId,
           type: type,
           token: token,
           deviceModel: ctx.deviceModel,
@@ -406,6 +469,10 @@ class Payghaam with WidgetsBindingObserver {
         );
       }
       _pendingPushToken = null;
+    } catch (e) {
+      _reportError(e, 'registerPushToken');
+    }
+  }
     } catch (e) {
       _reportError(e, 'registerPushToken');
     }
