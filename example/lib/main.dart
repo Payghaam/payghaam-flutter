@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:payghaam_flutter/payghaam_flutter.dart';
-import 'package:flutter/material.dart';
+// Flutter 3.50 deprecates this library in favor of package:material_ui.
+// The demo stays on the SDK widgets so it does not take that dependency.
+import 'package:flutter/material.dart'; // ignore: deprecated_member_use
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
