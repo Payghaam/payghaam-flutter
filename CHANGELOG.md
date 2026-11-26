@@ -1,4 +1,4 @@
-## 0.2.3
+## 0.2.4
 
 * Identity: `anonymousId`, language override, custom aliases, `removeEmail`,
   `removeSms`, `removeAlias`, `removeTags`, `optOut`, `optIn`, and

@@ -39,7 +39,9 @@ void main() {
     expect(await storage.getLanguage(), isNull);
   });
 
-  test('UserManager allows setting tags, language, and aliases for anonymous users', () async {
+  test(
+      'UserManager allows setting tags, language, and aliases for anonymous users',
+      () async {
     final config = PayghaamConfig(
       appId: 'app_1',
       apiKey: 'pk_live_123',
@@ -57,7 +59,6 @@ void main() {
       api,
       () => null, // externalId is null (anonymous user)
       () => 'anon_123',
-      () => 'en',
       () => true,
       onLanguageChanged: (lang) async {
         languageSet = lang ?? '';

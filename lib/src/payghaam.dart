@@ -170,7 +170,6 @@ class Payghaam with WidgetsBindingObserver {
       _api,
       () => _externalId,
       () => _anonymousId,
-      () => _language,
       () => _canSend,
       onLanguageChanged: (lang) async {
         _language = lang;
@@ -520,10 +519,6 @@ class Payghaam with WidgetsBindingObserver {
         );
       }
       _pendingPushToken = null;
-    } catch (e) {
-      _reportError(e, 'registerPushToken');
-    }
-  }
     } catch (e) {
       _reportError(e, 'registerPushToken');
     }

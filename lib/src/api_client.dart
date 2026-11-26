@@ -152,9 +152,8 @@ class ApiClient {
     String? anonymousId,
     required Map<String, String> aliases,
   }) {
-    final list = aliases.entries
-        .map((e) => {'label': e.key, 'value': e.value})
-        .toList();
+    final list =
+        aliases.entries.map((e) => {'label': e.key, 'value': e.value}).toList();
     return _post('/users', {
       if (externalId != null) 'externalId': externalId,
       if (anonymousId != null) 'anonymousId': anonymousId,

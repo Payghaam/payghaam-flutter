@@ -13,7 +13,6 @@ class UserManager {
   final ApiClient _api;
   final String? Function() _externalId;
   final String Function() _anonymousId;
-  final String? Function() _language;
   final bool Function() _canSend;
   final Future<void> Function(String? lang)? _onLanguageChanged;
 
@@ -22,7 +21,6 @@ class UserManager {
     this._api,
     this._externalId,
     this._anonymousId,
-    this._language,
     this._canSend, {
     Future<void> Function(String? lang)? onLanguageChanged,
   }) : _onLanguageChanged = onLanguageChanged;
