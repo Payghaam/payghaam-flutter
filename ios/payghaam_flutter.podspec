@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'payghaam_flutter'
-  s.version          = '0.2.2'
+  s.version          = '0.2.3'
   s.summary          = 'Payghaam Flutter SDK — iOS APNs integration.'
   s.description      = 'Native iOS push (APNs) registration and notification handling for the Payghaam Flutter SDK.'
   s.homepage         = 'https://github.com/payghaam/payghaam-flutter'
@@ -11,8 +11,9 @@ Pod::Spec.new do |s|
   s.dependency 'Flutter'
   # Canonical native SDK, published to the CocoaPods trunk as the `Payghaam`
   # pod. Pinned so a native SDK fix ships only when this repo bumps it.
-  # Live Activities (`PayghaamLiveActivities`, push-wake refresh) ship in 0.1.4+.
-  s.dependency 'Payghaam', '>= 0.1.5'
+  # The identity methods this wrapper calls reached trunk in 0.1.8.
+  # 0.1.5–0.1.7 were tagged and never published, so a lower floor cannot resolve.
+  s.dependency 'Payghaam', '>= 0.1.8'
   s.platform         = :ios, '15.0'
   s.swift_version    = '5.0'
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }

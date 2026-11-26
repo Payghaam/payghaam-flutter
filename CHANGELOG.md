@@ -1,3 +1,11 @@
+## 0.2.3
+
+* Identity: `anonymousId`, language override, custom aliases, `removeEmail`,
+  `removeSms`, `removeAlias`, `removeTags`, `optOut`, `optIn`, and
+  `getExternalId`.
+* Pin the native SDKs to the versions that are actually published: Android
+  `com.payghaam:payghaam:0.1.9` and iOS Payghaam `>= 0.1.8`.
+
 ## 0.2.1
 
 * Live Activities (iOS): plugin forwards push-wake to payghaam-ios

@@ -49,7 +49,8 @@ dependencies {
     // Brings in firebase-messaging and kotlinx-coroutines-android transitively, so
     // this plugin no longer declares them directly. Version pinned (not left
     // floating) so consumers get a reproducible build and this repo controls
-    // exactly when a native SDK fix ships.
-    implementation "com.payghaam:payghaam:0.1.8"
+    // exactly when a native SDK fix ships. 0.1.8 was uploaded and never
+    // released; 0.1.9 is the native SDK these identity APIs call.
+    implementation "com.payghaam:payghaam:0.1.9"
     implementation 'androidx.core:core-ktx:1.13.1'
 }
